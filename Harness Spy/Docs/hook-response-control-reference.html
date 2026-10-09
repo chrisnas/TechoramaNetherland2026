@@ -1,0 +1,914 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hook Responses That Control Cursor, Claude Code, and Copilot CLI</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f4f2ed;
+      --panel: #fffdf9;
+      --panel-2: #ebe8e1;
+      --text: #20211f;
+      --muted: #636761;
+      --line: #d8d5cd;
+      --accent: #245c58;
+      --accent-soft: #dceae7;
+      --danger: #8b372f;
+      --danger-soft: #f2dfdc;
+      --code: #ece9e2;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #171a19;
+        --panel: #202423;
+        --panel-2: #292e2c;
+        --text: #eceeea;
+        --muted: #b1b7af;
+        --line: #3b413e;
+        --accent: #8bc3bb;
+        --accent-soft: #293e3b;
+        --danger: #efaaa1;
+        --danger-soft: #432c2a;
+        --code: #171a19;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    header, main, footer {
+      width: min(1260px, calc(100% - 32px));
+      margin-inline: auto;
+    }
+    header { padding: 44px 0 22px; }
+    h1 {
+      max-width: 980px;
+      margin: 0 0 10px;
+      font-size: clamp(30px, 4vw, 48px);
+      line-height: 1.08;
+      letter-spacing: -0.035em;
+    }
+    h2 { margin: 0; font-size: 23px; }
+    h3 { margin: 0; font-size: 17px; }
+    h4 {
+      margin: 0 0 5px;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    p { margin: 6px 0; }
+    a { color: var(--accent); }
+    .lede {
+      max-width: 920px;
+      color: var(--muted);
+      font-size: 17px;
+    }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+    .badge, .tag {
+      display: inline-block;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 3px 9px;
+      background: var(--panel);
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .overview {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin: 10px 0 18px;
+    }
+    .overview article {
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-top: 4px solid var(--accent);
+      background: var(--panel);
+    }
+    .overview .number {
+      color: var(--accent);
+      font-size: 30px;
+      font-weight: 750;
+      line-height: 1;
+    }
+    .overview p { color: var(--muted); font-size: 13px; }
+    .callout {
+      margin: 16px 0;
+      padding: 14px 16px;
+      border-left: 4px solid var(--danger);
+      background: var(--panel);
+    }
+    .callout strong { color: var(--danger); }
+    .comparison {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 1px;
+      margin: 18px 0 26px;
+      border: 1px solid var(--line);
+      background: var(--line);
+    }
+    .comparison > div {
+      min-width: 0;
+      padding: 15px;
+      background: var(--panel);
+    }
+    .comparison p { font-size: 13px; }
+    .controls {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 10px;
+      padding: 12px 0;
+      background: color-mix(in srgb, var(--bg) 92%, transparent);
+      backdrop-filter: blur(10px);
+    }
+    input[type="search"], select, button {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--panel);
+      color: var(--text);
+      font: inherit;
+    }
+    input[type="search"] { width: 100%; padding: 9px 12px; }
+    select, button { padding: 8px 11px; cursor: pointer; }
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 2px 0 28px;
+    }
+    nav button.active {
+      border-color: var(--accent);
+      background: var(--accent);
+      color: var(--panel);
+    }
+    .vendor {
+      margin: 0 0 38px;
+      scroll-margin-top: 76px;
+    }
+    .vendor-head {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 16px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--accent);
+    }
+    .vendor-head p { color: var(--muted); }
+    .count { color: var(--accent); font-weight: 700; white-space: nowrap; }
+    .entries { display: grid; gap: 9px; }
+    details {
+      overflow: clip;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+    }
+    summary {
+      display: grid;
+      grid-template-columns: minmax(190px, .7fr) minmax(280px, 2fr) auto;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 14px;
+      cursor: pointer;
+      list-style: none;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; color: var(--accent); font-size: 20px; }
+    details[open] summary::after { content: "−"; }
+    .event-name {
+      font: 700 14px/1.3 ui-monospace, SFMono-Regular, Consolas, monospace;
+      overflow-wrap: anywhere;
+    }
+    .purpose { color: var(--muted); }
+    .tag {
+      margin-left: 7px;
+      border: 0;
+      background: var(--accent-soft);
+      color: var(--accent);
+      font: 650 11px/1.5 system-ui, sans-serif;
+      vertical-align: 1px;
+    }
+    .tag.block {
+      background: var(--danger-soft);
+      color: var(--danger);
+    }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 15px;
+      padding: 0 14px 14px;
+      border-top: 1px solid var(--line);
+    }
+    .detail-grid > div { min-width: 0; padding-top: 12px; }
+    .wide { grid-column: 1 / -1; }
+    code, pre {
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      background: var(--code);
+    }
+    code { padding: 1px 4px; border-radius: 3px; }
+    pre {
+      margin: 6px 0;
+      padding: 10px;
+      overflow: auto;
+      border-radius: 6px;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .source { font-size: 13px; }
+    .empty { display: none; padding: 28px 0; color: var(--muted); }
+    .notes {
+      margin: 40px 0;
+      padding: 18px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+    }
+    .notes li { margin: 7px 0; }
+    footer { padding: 0 0 40px; color: var(--muted); font-size: 12px; }
+    @media (max-width: 800px) {
+      .overview, .comparison { grid-template-columns: 1fr; }
+      summary { grid-template-columns: 1fr auto; }
+      summary .purpose { grid-column: 1 / -1; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .wide { grid-column: auto; }
+      .controls { grid-template-columns: 1fr; }
+    }
+    @media print {
+      .controls, nav { display: none; }
+      details { break-inside: avoid; }
+      details > * { display: block; }
+      summary::after { display: none; }
+      body { background: white; color: black; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Hook responses that can block or alter processing</h1>
+    <p class="lede">A cross-reference for Cursor, Claude Code, and GitHub Copilot CLI. It includes hooks whose returned output changes execution flow, tool or prompt data, model context, displayed output, session configuration, or workspace behavior. Purely observational hooks whose output is ignored are excluded.</p>
+    <div class="meta">
+      <span class="badge">Official documentation only</span>
+      <span class="badge">Researched 4 Oct 2026</span>
+      <span class="badge">Command/HTTP hooks unless noted</span>
+      <span class="badge">Self-contained HTML</span>
+    </div>
+  </header>
+  <main>
+    <section class="overview" aria-label="Result counts">
+      <article><div class="number">14</div><h3>Cursor events</h3><p>Six direct permission gates, continuation hooks, context/result mutation, user messaging, and workspace plugin loading.</p></article>
+      <article><div class="number">27</div><h3>Claude Code events</h3><p>Flow decisions plus prompt/tool mutation, context injection, model switching, worktrees, elicitation, watches, and display rewriting.</p></article>
+      <article><div class="number">10 + 1</div><h3>Copilot CLI events</h3><p>Ten config-file hook events, plus one prompt mutation available only to SDK programmatic hooks.</p></article>
+    </section>
+
+    <div class="callout">
+      <strong>Do not treat exit code 2 as portable.</strong> Cursor documents it as a block signal, Claude Code assigns event-specific meanings and exceptions, and Copilot CLI treats it as a warning by default. Copilot makes it a deny only for <code>preToolUse</code> and <code>permissionRequest</code>; for <code>postToolUseFailure</code> it carries recovery context.
+    </div>
+
+    <section class="comparison" aria-label="Common response semantics">
+      <div>
+        <h3>Cursor</h3>
+        <p><code>0</code> consumes JSON. <code>2</code> blocks. Other nonzero exits fail open unless <code>failClosed: true</code>. Invalid output on the six permission hooks blocks even without <code>failClosed</code>.</p>
+      </div>
+      <div>
+        <h3>Claude Code</h3>
+        <p>Valid JSON can be read on every exit code, but an honored exit-2 block wins. HTTP hooks must return 2xx plus decision JSON; HTTP status alone cannot block. Async command hooks cannot control processing.</p>
+      </div>
+      <div>
+        <h3>Copilot CLI</h3>
+        <p>Most failures and timeouts are fail-open. Command <code>preToolUse</code> is fail-closed on non-timeout errors, while its timeout remains fail-open. Exactly one final JSON document must remain on stdout.</p>
+      </div>
+    </section>
+
+    <div class="controls">
+      <input id="search" type="search" placeholder="Filter by event, response field, effect, or note…" aria-label="Filter hook events">
+      <select id="kind" aria-label="Filter by control type">
+        <option value="all">All control types</option>
+        <option value="block">Blocking / permission</option>
+        <option value="mutate">Mutation / replacement</option>
+        <option value="context">Context / continuation</option>
+        <option value="session">Session / workspace</option>
+        <option value="display">Display only</option>
+      </select>
+      <button id="expand" type="button">Expand visible</button>
+    </div>
+    <nav id="tabs" aria-label="Product filter"></nav>
+    <div id="catalog"></div>
+    <p class="empty" id="empty">No hook events match the current filter.</p>
+
+    <section class="notes">
+      <h2>Scope, exclusions, and cautions</h2>
+      <ul>
+        <li><strong>Response, not side effect:</strong> an audit hook that edits a file itself is not included unless the host consumes its returned output. Cursor <code>afterFileEdit</code>, for example, can run a formatter but has no response contract.</li>
+        <li><strong>Post-event means no rollback:</strong> changing what the model sees after a tool call does not undo file writes, network calls, telemetry, or any other external effect that already occurred.</li>
+        <li><strong>Claude common fields:</strong> many events also accept top-level <code>continue</code>, <code>stopReason</code>, <code>systemMessage</code>, and <code>terminalSequence</code>. Event sections can explicitly discard them; this report emphasizes event-specific, documented behavior. Prompt hooks return <code>{ok, reason, impossible?}</code>; agent hooks return <code>{ok, reason}</code> on the supported decision events.</li>
+        <li><strong>Excluded output-ignored events:</strong> Cursor <code>afterShellExecution</code>, <code>afterMCPExecution</code>, <code>afterFileEdit</code>, <code>afterTabFileEdit</code>, <code>afterAgentResponse</code>, <code>afterAgentThought</code>, and <code>sessionEnd</code>; Copilot <code>sessionEnd</code>, <code>errorOccurred</code>, and <code>preCompact</code>. Claude events described as side-effect-only are omitted unless they have a specific response that changes host behavior.</li>
+        <li><strong>Cloud and UI differences:</strong> each product has event-specific cloud exclusions. Review the “Exit / limits” field before using a hook as a security boundary.</li>
+      </ul>
+    </section>
+  </main>
+  <footer>Generated from the live official Cursor, Anthropic, and GitHub documentation on 4 Oct 2026. Links in each entry point to the corresponding official section.</footer>
+
+  <script>
+    const H = (vendor, name, kind, summary, when, response, effect, exit, examples, notes, source) =>
+      ({ vendor, name, kind, summary, when, response, effect, exit, examples, notes, source });
+
+    const hooks = [
+      H("cursor", "preToolUse", "block", "Gate any tool call or replace its input.",
+        "Before every tool invocation, including Shell, Read, Write, MCP, and Task.",
+        '`permission`: `"allow" | "deny"` (`"ask"` parses but is not enforced); optional `user_message`, `agent_message`, and replacement `updated_input`.',
+        "Allows or blocks execution. `updated_input` replaces the tool arguments before execution.",
+        "Exit 2 blocks. Invalid or schema-invalid output blocks. Other failures fail open unless `failClosed: true`.",
+        ['{"permission":"deny","user_message":"Blocked by policy","agent_message":"Use the approved tool."}', '{"permission":"allow","updated_input":{"command":"npm ci"}}'],
+        "Cloud-supported. If several hooks run, deny wins over ask and allow.",
+        "https://cursor.com/docs/hooks#pretooluse"),
+
+      H("cursor", "postToolUse", "mutate", "Replace an MCP result or inject model context.",
+        "After a tool succeeds.",
+        'Optional `updated_mcp_tool_output` object and `additional_context` string.',
+        "For MCP only, replaces the result seen by the model. Context is inserted after any successful tool result.",
+        "Use exit 0 with valid JSON. The action has already happened; no rollback behavior is documented.",
+        ['{"additional_context":"Coverage is below the required threshold."}', '{"updated_mcp_tool_output":{"redacted":true}}'],
+        "Result replacement is MCP-only; context injection works for other tools. Cloud-supported.",
+        "https://cursor.com/docs/hooks#posttooluse"),
+
+      H("cursor", "postToolUseFailure", "context", "Inject recovery guidance after a failed tool.",
+        "After a tool errors, times out, or is denied.",
+        'Optional `additional_context` string.',
+        "Adds guidance after the failed result so the agent can change its recovery behavior.",
+        "Use exit 0 with valid JSON. It does not retry or undo anything by itself.",
+        ['{"additional_context":"Retry with --maxWorkers=2 on CI."}'],
+        "Cloud-supported.",
+        "https://cursor.com/docs/hooks#posttoolusefailure"),
+
+      H("cursor", "subagentStart", "block", "Allow or prevent Task subagent creation.",
+        "Before Cursor spawns a Task-tool subagent.",
+        '`permission`: `"allow" | "deny"` and optional `user_message`. `"ask"` is unsupported and treated as deny.',
+        "Prevents or permits creation of the subagent.",
+        "Exit 2, invalid JSON, and schema-invalid output block. Other failures fail open unless `failClosed: true`.",
+        ['{"permission":"deny","user_message":"Parallel workers are disabled."}', '{"permission":"allow"}'],
+        "Native Cursor event; cloud-supported.",
+        "https://cursor.com/docs/hooks#subagentstart"),
+
+      H("cursor", "subagentStop", "context", "Automatically continue a completed subagent.",
+        "When a subagent completes, errors, or is aborted.",
+        'Optional nonempty `followup_message` string.',
+        "Submits the message as another subagent instruction, but only when input status is `completed`.",
+        "Default maximum is five follow-ups per script; configure `loop_limit`, or use `null` for no cap.",
+        ['{"followup_message":"Now inspect the authorization path."}'],
+        "Cloud-supported. Error and aborted statuses do not consume the follow-up.",
+        "https://cursor.com/docs/hooks#subagentstop"),
+
+      H("cursor", "beforeShellExecution", "block", "Allow, deny, or ask before running a command.",
+        "Before a shell command executes.",
+        '`permission`: `"allow" | "deny" | "ask"`; optional `user_message` and `agent_message`.',
+        "Executes, blocks, or opens the user-approval flow.",
+        "Exit 2 or invalid/schema-invalid output blocks. Other failures fail open unless `failClosed: true`.",
+        ['{"permission":"ask","user_message":"Production command requires approval."}', '{"permission":"deny","agent_message":"Use the read-only command instead."}'],
+        "Matcher runs against the full command text. Cloud-supported.",
+        "https://cursor.com/docs/hooks#beforeshellexecution--beforemcpexecution"),
+
+      H("cursor", "beforeMCPExecution", "block", "Allow, deny, or ask before an MCP call.",
+        "Before an MCP tool executes.",
+        '`permission`: `"allow" | "deny" | "ask"`; optional `user_message` and `agent_message`.',
+        "Controls whether the MCP request is made or asks the user.",
+        "Exit 2 or invalid/schema-invalid output blocks. Consider `failClosed: true` for security-sensitive policy.",
+        ['{"permission":"deny","user_message":"Unrecognized MCP server."}', '{"permission":"allow"}'],
+        "Match primarily on `mcp_server_name` and `tool_name`. Not available in cloud agents.",
+        "https://cursor.com/docs/hooks#beforeshellexecution--beforemcpexecution"),
+
+      H("cursor", "beforeReadFile", "block", "Prevent Agent from reading a file.",
+        "Before Cursor Agent reads file content.",
+        '`permission`: `"allow" | "deny"` and optional `user_message`.',
+        "Blocks sensitive content from being read and sent to the model.",
+        "Exit 2 or invalid/schema-invalid output blocks. Other failures fail open unless `failClosed: true`.",
+        ['{"permission":"deny","user_message":"Secrets files cannot be read."}', '{"permission":"allow"}'],
+        "Agent only; the hook input already includes the content for policy inspection. Cloud-supported.",
+        "https://cursor.com/docs/hooks#beforereadfile"),
+
+      H("cursor", "beforeTabFileRead", "block", "Prevent Tab completion from reading a file.",
+        "Before inline Tab completion reads file content.",
+        '`permission`: `"allow" | "deny"`.',
+        "Allows or blocks file access by Tab.",
+        "Exit 2 or invalid/schema-invalid output blocks. Other failures fail open unless `failClosed: true`.",
+        ['{"permission":"deny"}', '{"permission":"allow"}'],
+        "Tab only; no attachments or documented user message. IDE-only and unavailable in cloud agents.",
+        "https://cursor.com/docs/hooks#beforetabfileread"),
+
+      H("cursor", "beforeSubmitPrompt", "block", "Reject a prompt before the backend request.",
+        "Immediately after the user sends a prompt and before submission.",
+        '`continue`: boolean and optional `user_message`.',
+        "`false` prevents submission and can explain the rejection to the user.",
+        "Exit 2 also blocks. This event does not receive the special invalid-output fail-closed guarantee of permission hooks.",
+        ['{"continue":false,"user_message":"Remove credentials before submitting."}', '{"continue":true}'],
+        "Cloud-supported.",
+        "https://cursor.com/docs/hooks#beforesubmitprompt"),
+
+      H("cursor", "stop", "context", "Continue the main agent automatically.",
+        "When the agent loop ends with completed, aborted, or error status.",
+        'Optional nonempty `followup_message` string.',
+        "Automatically submits the string as the next user message and restarts the loop.",
+        "Default maximum is five follow-ups per script; configure `loop_limit`, or set it to `null`.",
+        ['{"followup_message":"Run the tests and fix any remaining failures."}'],
+        "Cloud-supported. Use the input `loop_count` to self-limit.",
+        "https://cursor.com/docs/hooks#stop"),
+
+      H("cursor", "sessionStart", "session", "Set hook environment and initial agent context.",
+        "When a new Composer conversation is created.",
+        'Optional `env` string map and `additional_context` string.',
+        "Makes environment variables available to later hooks and inserts initial system context.",
+        "Fire-and-forget: session creation is not blocked. Accepted `continue` and `user_message` fields are currently unenforced.",
+        ['{"env":{"POLICY_MODE":"strict"},"additional_context":"Follow the internal deployment policy."}'],
+        "Not available in cloud agents.",
+        "https://cursor.com/docs/hooks#sessionstart"),
+
+      H("cursor", "preCompact", "display", "Show a user message before compaction.",
+        "Immediately before automatic or manual context compaction.",
+        'Optional `user_message` string.',
+        "Displays a message in Cursor.",
+        "Explicitly observational: it cannot block or modify compaction.",
+        ['{"user_message":"Context is being summarized."}'],
+        "Cloud-supported. Included because Cursor consumes the response and changes visible behavior.",
+        "https://cursor.com/docs/hooks#precompact"),
+
+      H("cursor", "workspaceOpen", "session", "Load workspace-scoped Cursor plugins.",
+        "Once when a workspace opens and after each workspace-folder change.",
+        'Optional `pluginPaths` array of absolute plugin-directory paths.',
+        "Loads the returned plugins for the current workspace.",
+        "Use exit 0 with valid JSON. Failures are not documented as preventing the workspace from opening.",
+        ['{"pluginPaths":["C:/company/cursor-plugins/security"]}'],
+        "Desktop and CLI, outside agent sessions; skipped with zero workspace folders; unavailable in cloud agents.",
+        "https://cursor.com/docs/hooks#workspaceopen"),
+
+      H("claude", "UserPromptSubmit", "block", "Block a submitted prompt or add context.",
+        "Before Claude processes any submitted prompt, including scheduled prompts and background-agent reports.",
+        'Top-level `decision:"block"` and `reason`; event output supports `additionalContext`, `sessionTitle`, and `suppressOriginalPrompt`.',
+        "Rejects the prompt, injects context into an allowed prompt, renames the session, or suppresses prompt text in the displayed block message.",
+        "Exit 2 blocks and uses stderr as the user-facing reason. Command/HTTP/MCP timeout fails open; SDK callback timeout blocks.",
+        ['{"decision":"block","reason":"Secrets are not accepted","hookSpecificOutput":{"hookEventName":"UserPromptSubmit","suppressOriginalPrompt":true}}', '{"hookSpecificOutput":{"hookEventName":"UserPromptSubmit","additionalContext":"Apply the release checklist."}}'],
+        "`suppressOriginalPrompt` does not guarantee removal from local history or transcript files.",
+        "https://code.claude.com/docs/en/hooks#userpromptsubmit"),
+
+      H("claude", "UserPromptExpansion", "block", "Block slash/skill expansion or add context.",
+        "Before a directly typed skill, slash command, or MCP prompt expands.",
+        'Top-level `decision:"block"` and `reason`; event output supports `additionalContext`.',
+        "Rejects expansion or injects context alongside the expanded prompt.",
+        "Exit 2 blocks and shows stderr to the user.",
+        ['{"decision":"block","reason":"Deployment commands are disabled."}', '{"hookSpecificOutput":{"hookEventName":"UserPromptExpansion","additionalContext":"Target staging only."}}'],
+        "Direct skill invocation can bypass PreToolUse, so this event covers a distinct gate.",
+        "https://code.claude.com/docs/en/hooks#userpromptexpansion"),
+
+      H("claude", "PreToolUse", "block", "Allow, deny, ask, defer, or rewrite a tool call.",
+        "After Claude constructs tool parameters and before execution.",
+        'Event output: `permissionDecision:"allow"|"deny"|"ask"|"defer"`, `permissionDecisionReason`, complete replacement `updatedInput`, and `additionalContext`.',
+        "Controls permission, changes arguments, or injects context. `defer` pauses one tool call for later resume in non-interactive `-p` mode.",
+        "Exit 2 denies and stderr is shown to Claude. Command/HTTP/MCP timeout fails open; SDK callback timeout blocks.",
+        ['{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"Production writes are prohibited."}}', '{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"allow","updatedInput":{"command":"git status"}}}'],
+        "Precedence: deny > defer > ask > allow. Rewritten input is permission-checked again.",
+        "https://code.claude.com/docs/en/hooks#pretooluse"),
+
+      H("claude", "PermissionRequest", "block", "Answer a permission request on the user's behalf.",
+        "When Claude Code is about to ask for tool permission.",
+        'Nested `decision.behavior:"allow"|"deny"`; allow may include `updatedInput` and `updatedPermissions`; deny may include `message` and `interrupt`.',
+        "Grants or denies permission. A denial with `interrupt:true` also stops Claude.",
+        "Exit 2 does not block here; the permission flow proceeds unchanged. Use valid decision JSON.",
+        ['{"hookSpecificOutput":{"hookEventName":"PermissionRequest","decision":{"behavior":"deny","message":"Approval unavailable","interrupt":true}}}', '{"hookSpecificOutput":{"hookEventName":"PermissionRequest","decision":{"behavior":"allow"}}}'],
+        "Allow cannot override deny/ask rules. Prompt-hook `ok:false` has no effect; agent hooks are unsupported.",
+        "https://code.claude.com/docs/en/hooks#permissionrequest"),
+
+      H("claude", "PostToolUse", "mutate", "Replace a successful result or add feedback.",
+        "After a tool succeeds.",
+        'Top-level `decision:"block"`/`reason`; event output supports `additionalContext`, `classifierContext`, and `updatedToolOutput`.',
+        "Replaces what Claude sees, annotates the result for auto mode, or adds corrective feedback beside the result.",
+        "Exit 2 does not block; stderr is shown to Claude. The tool action is already complete.",
+        ['{"hookSpecificOutput":{"hookEventName":"PostToolUse","updatedToolOutput":{"stdout":"[redacted]","stderr":"","interrupted":false,"isImage":false}}}', '{"decision":"block","reason":"Validate this generated file before continuing."}'],
+        "Replacement must match the built-in tool's output shape. Deprecated `updatedMCPToolOutput` is MCP-only.",
+        "https://code.claude.com/docs/en/hooks#posttooluse"),
+
+      H("claude", "PostToolUseFailure", "context", "Add corrective feedback after tool failure.",
+        "After an executing tool fails.",
+        'Top-level `decision:"block"`/`reason`; event output supports `additionalContext`.',
+        "Adds recovery guidance beside the failed result; it cannot undo or retry the call by itself.",
+        "Exit 2 does not block; stderr is shown to Claude.",
+        ['{"decision":"block","reason":"Run npm ci before retrying.","hookSpecificOutput":{"hookEventName":"PostToolUseFailure","additionalContext":"The lockfile changed."}}'],
+        "Does not fire for argument validation failure or permission rejection.",
+        "https://code.claude.com/docs/en/hooks#posttoolusefailure"),
+
+      H("claude", "PostToolBatch", "block", "Stop before the next model call after a parallel batch.",
+        "Once after every call in a parallel tool batch resolves.",
+        'Top-level `decision:"block"`/`reason`, or `continue:false`/`stopReason`; event output may add `additionalContext`.',
+        "Stops the agentic loop before the next model request or injects one context item for the entire batch.",
+        "Exit 2 blocks the loop; stderr supplies the reason.",
+        ['{"decision":"block","reason":"Batch validation failed."}', '{"hookSpecificOutput":{"hookEventName":"PostToolBatch","additionalContext":"Two test shards timed out."}}'],
+        "Useful for evaluating the batch as a whole rather than each tool separately.",
+        "https://code.claude.com/docs/en/hooks#posttoolbatch"),
+
+      H("claude", "PermissionDenied", "context", "Tell auto mode that retry is permitted.",
+        "After auto mode denies a tool.",
+        'Event output `retry: true | false`.',
+        "`true` tells the model it may retry; it does not reverse the denial.",
+        "Exit 2 and stderr are ignored.",
+        ['{"hookSpecificOutput":{"hookEventName":"PermissionDenied","retry":true}}'],
+        "`retry:true` is ignored when the classifier produced no verdict.",
+        "https://code.claude.com/docs/en/hooks#permissiondenied"),
+
+      H("claude", "SubagentStop", "block", "Keep a subagent running with feedback.",
+        "After a subagent finishes responding.",
+        'Top-level `decision:"block"` with required `reason`, or event output `additionalContext`.',
+        "Prevents stopping and uses the reason/context as the subagent's next instruction.",
+        "Exit 2 prevents stopping and feeds stderr to the subagent.",
+        ['{"decision":"block","reason":"Inspect the remaining failing test."}', '{"hookSpecificOutput":{"hookEventName":"SubagentStop","additionalContext":"Also verify cleanup paths."}}'],
+        "Use PostToolUse on the Agent tool when feedback should go to the parent instead.",
+        "https://code.claude.com/docs/en/hooks#subagentstop"),
+
+      H("claude", "TaskCreated", "block", "Reject and roll back task creation.",
+        "While the TaskCreate tool is creating a task.",
+        'Top-level `decision:"block"` and `reason`.',
+        "Deletes the newly created task and returns the reason as the tool error.",
+        "Exit 2 has the same effect using stderr. `continue:false` is explicitly ignored.",
+        ['{"decision":"block","reason":"Task subject must include a ticket number."}'],
+        "This is rollback of the task record created by TaskCreate, not arbitrary external side effects.",
+        "https://code.claude.com/docs/en/hooks#taskcreated"),
+
+      H("claude", "TaskCompleted", "block", "Prevent task completion or stop a teammate.",
+        "When TaskUpdate marks a task complete, or a teammate ends with in-progress tasks.",
+        'Top-level `continue:false` and `stopReason`; exit 2 supplies blocking feedback.',
+        "Exit 2 prevents completion. For teammate-triggered events, `continue:false` stops the teammate entirely.",
+        "For a TaskUpdate-triggered event, `continue:false` is ignored; use exit 2 or a prompt/agent hook decision.",
+        ['{"continue":false,"stopReason":"Team task cancelled."}', 'stderr: Tests still fail\nexit code: 2'],
+        "Trigger-dependent semantics make this event unsuitable for a single universal JSON policy.",
+        "https://code.claude.com/docs/en/hooks#taskcompleted"),
+
+      H("claude", "Stop", "block", "Continue the main conversation after Claude tries to stop.",
+        "When the main agent has finished responding.",
+        'Top-level `decision:"block"` with required `reason`, or event output `additionalContext`.',
+        "Prevents stopping and supplies the reason/context as the next feedback to Claude.",
+        "Exit 2 prevents stopping. Claude normally overrides after eight consecutive continuations; the cap is configurable.",
+        ['{"decision":"block","reason":"Run the requested tests before finishing."}', '{"hookSpecificOutput":{"hookEventName":"Stop","additionalContext":"The acceptance checklist is incomplete."}}'],
+        "Inspect `stop_hook_active` and self-limit to avoid loops.",
+        "https://code.claude.com/docs/en/hooks#stop"),
+
+      H("claude", "TeammateIdle", "block", "Keep a teammate working or stop it entirely.",
+        "When an agent-team teammate is about to go idle.",
+        'Top-level `continue:false` and `stopReason`; exit 2 supplies feedback.',
+        "Exit 2 prevents idle and gives the teammate more work. `continue:false` stops the teammate entirely.",
+        "The two controls have opposite operational outcomes; choose deliberately.",
+        ['stderr: Review the remaining queue before idling.\nexit code: 2', '{"continue":false,"stopReason":"Team task cancelled."}'],
+        "Applies to agent teams.",
+        "https://code.claude.com/docs/en/hooks#teammateidle"),
+
+      H("claude", "ConfigChange", "block", "Prevent changed configuration from applying live.",
+        "When settings, managed-policy, or skill files change during a session.",
+        'Top-level `decision:"block"` and `reason`.',
+        "Stops the new configuration from applying to the running session.",
+        "Exit 2 blocks identically. Policy settings cannot be blocked; reason/stderr is debug-log only.",
+        ['{"decision":"block","reason":"Project settings require review."}'],
+        "Does not undo the file change. `systemMessage` and `continue` are discarded.",
+        "https://code.claude.com/docs/en/hooks#configchange"),
+
+      H("claude", "WorktreeCreate", "session", "Replace default isolated-worktree creation.",
+        "When Claude Code creates an isolated worktree.",
+        'Command hook: last nonempty stdout line is the path. HTTP hook: event output `worktreePath`.',
+        "Selects the worktree directory and replaces Claude Code's default creation mechanism.",
+        "Any nonzero command exit, missing path, or invalid directory fails creation.",
+        ['/repo/worktrees/feature-auth', '{"hookSpecificOutput":{"hookEventName":"WorktreeCreate","worktreePath":"/repo/worktrees/feature-auth"}}'],
+        "Command stdout cannot simultaneously carry decision JSON. Paths are normalized and safety-checked.",
+        "https://code.claude.com/docs/en/hooks#worktreecreate"),
+
+      H("claude", "WorktreeRemove", "session", "Control custom worktree cleanup success.",
+        "When a hook-created worktree is being removed.",
+        "Exit code only; JSON output is discarded.",
+        "Exit 0 reports successful removal. A nonzero exit fails removal if the directory still exists.",
+        "If the hook removed the directory before exiting nonzero, cleanup still counts as successful.",
+        ['stdout: (ignored)\nexit code: 0', 'directory still exists\nexit code: 1  # removal fails'],
+        "When background-session deletion depends on cleanup, failed removal also preserves the session.",
+        "https://code.claude.com/docs/en/hooks#worktreeremove"),
+
+      H("claude", "PreCompact", "block", "Prevent context compaction.",
+        "Before manual or automatic context compaction.",
+        'Top-level `decision:"block"` and `reason`.',
+        "Keeps the conversation uncompacted for proactive auto-compaction; after a context-limit error, the underlying request fails.",
+        "Exit 2 blocks. For manual /compact, stderr is shown to the user.",
+        ['{"decision":"block","reason":"Preserve full context for this review."}'],
+        "`systemMessage` and `continue` are discarded.",
+        "https://code.claude.com/docs/en/hooks#precompact"),
+
+      H("claude", "PreModelSwitch", "block", "Allow, deny, or confirm a model switch.",
+        "Before a user- or client-requested model switch.",
+        'Top-level `decision:"block"`/`reason`, or event output `permissionDecision:"allow"|"deny"|"ask"` and reason.',
+        "Allows the switch, cancels it, or requests confirmation.",
+        "Exit 2 blocks and shows stderr. Timeout blocks.",
+        ['{"hookSpecificOutput":{"hookEventName":"PreModelSwitch","permissionDecision":"ask","permissionDecisionReason":"This switch will re-cache the context. Continue?"}}', '{"decision":"block","reason":"This project requires the approved model."}'],
+        "Ask is interactive only for /model; elsewhere it is a refusal. Automatic fallback/restoration does not trigger this event.",
+        "https://code.claude.com/docs/en/hooks#premodelswitch"),
+
+      H("claude", "Elicitation", "block", "Answer an MCP server's input request.",
+        "When an MCP server requests user input.",
+        'Event output `action:"accept"|"decline"|"cancel"` and, for accept, a `content` object.',
+        "Programmatically answers the request and skips the user dialog.",
+        "Exit 2 denies the elicitation; stderr is not shown and event output on that exit is ignored.",
+        ['{"hookSpecificOutput":{"hookEventName":"Elicitation","action":"accept","content":{"username":"alice"}}}', '{"hookSpecificOutput":{"hookEventName":"Elicitation","action":"decline"}}'],
+        "`systemMessage` and `continue` are discarded.",
+        "https://code.claude.com/docs/en/hooks#elicitation"),
+
+      H("claude", "ElicitationResult", "mutate", "Override or redact an elicitation answer.",
+        "After the user answers an MCP elicitation and before forwarding it to the server.",
+        'Event output `action:"accept"|"decline"|"cancel"` and optional replacement `content`.',
+        "Changes the effective action and/or content delivered to the MCP server.",
+        "Exit 2 changes the effective action to decline; stderr is not shown.",
+        ['{"hookSpecificOutput":{"hookEventName":"ElicitationResult","action":"decline","content":{}}}', '{"hookSpecificOutput":{"hookEventName":"ElicitationResult","action":"accept","content":{"token":"[redacted]"}}}'],
+        "`systemMessage`, `continue`, and exit-2 event output are discarded.",
+        "https://code.claude.com/docs/en/hooks#elicitationresult"),
+
+      H("claude", "SessionStart", "session", "Initialize context, title, watches, and skills.",
+        "For new, resumed, cleared, compacted, or forked sessions.",
+        'Event output supports `additionalContext`, `initialUserMessage`, `sessionTitle`, `watchPaths`, and `reloadSkills`; plain stdout also becomes context.',
+        "Sets initial model context/turn, title, watched paths, or triggers a skill rescan.",
+        "Exit 2 does not block; stderr is user-only. Command and MCP-tool hooks only.",
+        ['{"hookSpecificOutput":{"hookEventName":"SessionStart","additionalContext":"Branch: release","sessionTitle":"release","reloadSkills":true}}', '{"hookSpecificOutput":{"hookEventName":"SessionStart","watchPaths":["/repo/.env","/repo/config.json"]}}'],
+        "Some output fields apply only to particular session sources; strings are capped at 10,000 characters.",
+        "https://code.claude.com/docs/en/hooks#sessionstart"),
+
+      H("claude", "MessageDisplay", "display", "Replace streamed assistant text on screen.",
+        "For each streamed assistant-text batch.",
+        'Event output `displayContent`.',
+        "Changes only the rendered text; Claude and the transcript retain the original.",
+        "Exit 2 does not block; the original text is displayed on failure or timeout.",
+        ['{"hookSpecificOutput":{"hookEventName":"MessageDisplay","displayContent":"Redacted output\\n"}}'],
+        "`systemMessage` and `continue` are discarded.",
+        "https://code.claude.com/docs/en/hooks#messagedisplay"),
+
+      H("claude", "SubagentStart", "context", "Inject context into a new subagent.",
+        "When an Agent subagent is spawned.",
+        'Event output `additionalContext`.',
+        "Adds context before the subagent's first prompt.",
+        "Exit 2 does not block; stderr appears only in the subagent transcript.",
+        ['{"hookSpecificOutput":{"hookEventName":"SubagentStart","additionalContext":"Apply the security checklist."}}'],
+        "This event does not provide a subagent-creation deny response.",
+        "https://code.claude.com/docs/en/hooks#subagentstart"),
+
+      H("claude", "CwdChanged", "session", "Replace dynamic file watches after a directory change.",
+        "After the working directory changes.",
+        'Event output `watchPaths`; top-level `systemMessage` may notify the user.',
+        "Replaces the dynamic FileChanged watch list and can show a brief notification.",
+        "Exit 2 does not block; stderr is shown to the user.",
+        ['{"hookSpecificOutput":{"hookEventName":"CwdChanged","watchPaths":["/repo/.env"]}}'],
+        "Matcher-configured paths remain watched. `continue` is discarded.",
+        "https://code.claude.com/docs/en/hooks#cwdchanged"),
+
+      H("claude", "DirectoryAdded", "context", "Add a message after a repository directory is registered.",
+        "After /add-dir or SDK register_repo_root.",
+        "Top-level `systemMessage`.",
+        "For /add-dir, delivers the message as Claude context on the next turn; SDK registration logs it only.",
+        "Exit 2 does not block; the directory was already added. The event runs asynchronously.",
+        ['{"systemMessage":"Dependencies for the added repository are ready."}'],
+        "`continue` is discarded.",
+        "https://code.claude.com/docs/en/hooks#directoryadded"),
+
+      H("claude", "FileChanged", "session", "Replace dynamic watches after a watched file changes.",
+        "After a watched file is added, changed, or removed.",
+        'Event output `watchPaths`; top-level `systemMessage` may notify the user.',
+        "Replaces the dynamic watch list and can show an interactive notification.",
+        "Exit 2 does not block; the file already changed and stderr is shown to the user.",
+        ['{"hookSpecificOutput":{"hookEventName":"FileChanged","watchPaths":["/repo/.env","/repo/config.json"]}}'],
+        "Matcher-defined paths remain watched. `continue` is discarded.",
+        "https://code.claude.com/docs/en/hooks#filechanged"),
+
+      H("claude", "PostModelSwitch", "context", "Inject context tailored to the new model.",
+        "After any persistent model change, including requested switches, fallback, plan mode, and resume restoration.",
+        'Plain stdout or event output `additionalContext`.',
+        "Adds model-specific context to the next request.",
+        "Exit 2 does not block; the model already switched and stderr is user-only.",
+        ['{"hookSpecificOutput":{"hookEventName":"PostModelSwitch","additionalContext":"Use the organization review workflow."}}', 'This model should prioritize concise verification.'],
+        "If several switches occur before the next request, only output for the final target is delivered.",
+        "https://code.claude.com/docs/en/hooks#postmodelswitch"),
+
+      H("copilot", "preToolUse", "block", "Allow, deny, ask, or rewrite a tool call.",
+        "Before each tool executes.",
+        '`permissionDecision:"allow"|"deny"|"ask"`, `permissionDecisionReason`, and replacement `modifiedArgs`.',
+        "Controls tool execution or replaces its arguments. Under cloud agent, ask is treated as deny.",
+        "Command hook is fail-closed on every non-timeout nonzero exit, including 2; timeout is fail-open. HTTP errors/timeouts are fail-open.",
+        ['{"permissionDecision":"deny","permissionDecisionReason":"Destructive command blocked."}', '{"permissionDecision":"allow","modifiedArgs":{"command":"git status"}}'],
+        "If multiple hooks run, any deny blocks. PascalCase PreToolUse uses compatible payload and matcher semantics.",
+        "https://docs.github.com/en/copilot/reference/hooks-reference#pretooluse-decision-control"),
+
+      H("copilot", "permissionRequest", "block", "Short-circuit the CLI permission service.",
+        "Before rules, session approvals, automatic decisions, and user prompting.",
+        '`behavior:"allow"|"deny"`, optional denial `message`, and `interrupt`.',
+        "Approves or denies the request; deny plus `interrupt:true` stops the agent.",
+        "Exit 2 means deny and merges stdout with deny. It does not run meaningfully in cloud agent.",
+        ['{"behavior":"deny","message":"Deployment is prohibited."}', '{"behavior":"deny","message":"Policy violation.","interrupt":true}'],
+        "Does not run for read or hook permission kinds. Allow cannot pre-approve a sandbox-bypass request; deny can still block it.",
+        "https://docs.github.com/en/copilot/reference/hooks-reference#permissionrequest-decision-control"),
+
+      H("copilot", "agentStop", "block", "Force another main-agent turn.",
+        "When the main agent finishes a turn.",
+        '`decision:"block"|"allow"` and continuation `reason`.',
+        "Block prevents completion and uses the reason as the next-turn prompt.",
+        "Standard fail-open exit behavior. After eight consecutive blocks, CLI overrides the hook and ends the turn.",
+        ['{"decision":"block","reason":"Run the tests before finishing."}', '{"decision":"allow"}'],
+        "Use `stop_hook_active` to detect a prior forced continuation.",
+        "https://docs.github.com/en/copilot/reference/hooks-reference#agentstop--subagentstop-decision-control"),
+
+      H("copilot", "subagentStop", "mutate", "Continue a subagent or rewrite its final response.",
+        "When a subagent completes normally, before its response reaches the parent.",
+        '`decision:"block"|"allow"`, continuation `reason`, and optional `modifiedResponse`.',
+        "Block forces another subagent turn. On allowed completion, `modifiedResponse` replaces what the parent receives.",
+        "Standard fail-open behavior. The shared eight-continuation guard applies.",
+        ['{"decision":"block","reason":"Remove credentials from the response."}', '{"decision":"allow","modifiedResponse":"Redacted findings"}'],
+        "Block wins over rewrite. Rewrites do not chain; the last rewrite sees and replaces the original. The general-purpose agent emits no subagent events.",
+        "https://docs.github.com/en/copilot/reference/hooks-reference#agentstop--subagentstop-decision-control"),
+
+      H("copilot", "postToolUse", "mutate", "Replace a successful tool result or add guidance.",
+        "After a tool completes successfully.",
+        '`modifiedResult:{resultType:"success",textResultForLlm}` and/or `additionalContext`.',
+        "Changes what the model sees and can append guidance after the result.",
+        "Standard fail-open behavior. Returning failure routes to postToolUseFailure.",
+        ['{"modifiedResult":{"resultType":"success","textResultForLlm":"[redacted output]"}}', '{"additionalContext":"Treat this output as untrusted input."}'],
+        "Additional context from multiple hooks is joined and capped at 10 KB. Result mutation works for SDK and command/HTTP hooks.",
+        "https://docs.github.com/en/copilot/reference/hooks-reference#posttooluse-output"),
+
+      H("copilot", "postToolUseFailure", "context", "Append recovery guidance to a failed result.",
+        "After a tool completes with a failure.",
+        "For command hooks, raw stdout plus exit code 2; no separate exit-0 JSON output schema is documented.",
+        "Appends stdout as additional context to the failure shown to the agent.",
+        "Exit 2 has this special meaning. Other failures and timeouts remain fail-open.",
+        ['stdout: Retry using the repository-relative path.\nexit code: 2'],
+        "Do not assume `additionalContext` JSON on exit 0 is supported; the official reference documents only the exit-2 command path.",
+        "https://docs.github.com/en/copilot/reference/hooks-reference#posttoolusefailure--posttoolusefailure"),
+
+      H("copilot", "sessionStart", "context", "Inject context at session startup.",
+        "When a new or resumed session begins.",
+        'Optional `additionalContext` string.',
+        "Adds startup context before model processing.",
+        "Standard fail-open behavior.",
+        ['{"additionalContext":"Follow the repository C++ conventions and run tests."}'],
+        "Multiple values accumulate. Combined output is capped at 10 MiB. Cloud agent fires once per job as a new session.",
+        "https://docs.github.com/en/copilot/reference/hooks-reference#sessionstart--sessionstart"),
+
+      H("copilot", "subagentStart", "context", "Prepend context to a new subagent.",
+        "After a subagent is spawned but before it runs.",
+        'Optional `additionalContext` string.',
+        "Prepends instructions to the subagent's first user message; it cannot block creation.",
+        "Standard fail-open behavior.",
+        ['{"additionalContext":"Focus on memory safety and lifetime errors."}'],
+        "The built-in general-purpose agent emits neither start nor stop events. Values accumulate up to the 10 MiB combined limit.",
+        "https://docs.github.com/en/copilot/reference/hooks-reference#subagentstart"),
+
+      H("copilot", "userPromptTransformed", "mutate", "Rewrite model-facing prompt content.",
+        "After runtime transformation, just before content is sent to the model and stored.",
+        'Nonempty `modifiedTransformedPrompt` string.',
+        "Replaces model-facing and persisted session content, while the timeline display remains unchanged.",
+        "Standard fail-open behavior; empty or non-string replacements are rejected/ignored.",
+        ['{"modifiedTransformedPrompt":"Answer using only repository evidence."}'],
+        "Mutation-only: cannot block the turn. The replacement is replayed unchanged after resume. Output limit is 10 MiB.",
+        "https://docs.github.com/en/copilot/reference/hooks-reference#userprompttransformed"),
+
+      H("copilot", "notification", "context", "Inject a user message after a CLI notification.",
+        "Asynchronously for shell completion, detached-shell completion, agent completion/idle, permission prompts, and elicitation dialogs.",
+        'Optional `additionalContext` string.',
+        "Injects a prepended user message and can trigger more agent processing when the session is idle.",
+        "Fire-and-forget and never blocks; errors are logged and skipped.",
+        ['{"additionalContext":"The background build completed; inspect its result."}'],
+        "CLI only; does not fire in cloud agent. Matcher filters by notification type.",
+        "https://docs.github.com/en/copilot/reference/hooks-reference#notification-hook"),
+
+      H("copilot", "userPromptSubmitted", "mutate", "Rewrite the prompt for the current turn (SDK only).",
+        "When the user submits a prompt.",
+        'SDK programmatic response `modifiedPrompt` with a nonempty string.',
+        "Replaces the prompt for the remainder of the turn.",
+        "Command and HTTP config-file hook output is explicitly discarded, including `modifiedPrompt`.",
+        ['{"modifiedPrompt":"Review this request for security issues first."}'],
+        "SDK-only edge case. Hosted/steering cloud runtimes also ignore this output.",
+        "https://docs.github.com/en/copilot/reference/hooks-reference#userpromptsubmitted--userpromptsubmit")
+    ];
+
+    const vendors = {
+      cursor: {
+        title: "Cursor",
+        subtitle: "Native Cursor hook names and response contracts."
+      },
+      claude: {
+        title: "Claude Code",
+        subtitle: "Event-specific controls; generic fields and exit 2 have documented exceptions."
+      },
+      copilot: {
+        title: "GitHub Copilot CLI",
+        subtitle: "Ten config-hook responses plus one SDK-only prompt mutation."
+      }
+    };
+    const kindLabels = {
+      block: "blocking / permission",
+      mutate: "mutation",
+      context: "context / continuation",
+      session: "session / workspace",
+      display: "display only"
+    };
+
+    let activeVendor = "all";
+    const search = document.getElementById("search");
+    const kind = document.getElementById("kind");
+    const catalog = document.getElementById("catalog");
+    const tabs = document.getElementById("tabs");
+    const empty = document.getElementById("empty");
+    const expand = document.getElementById("expand");
+    let expanded = false;
+
+    const escapeHtml = value => String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+
+    function makeTabs() {
+      const counts = Object.fromEntries(Object.keys(vendors).map(id => [id, hooks.filter(h => h.vendor === id).length]));
+      tabs.innerHTML = [
+        `<button data-vendor="all" class="active">All (${hooks.length})</button>`,
+        ...Object.entries(vendors).map(([id, value]) =>
+          `<button data-vendor="${id}">${escapeHtml(value.title)} (${counts[id]})</button>`)
+      ].join("");
+      tabs.addEventListener("click", event => {
+        const button = event.target.closest("button[data-vendor]");
+        if (!button) return;
+        activeVendor = button.dataset.vendor;
+        [...tabs.querySelectorAll("button")].forEach(item => item.classList.toggle("active", item === button));
+        render();
+      });
+    }
+
+    function matches(hook) {
+      if (activeVendor !== "all" && hook.vendor !== activeVendor) return false;
+      if (kind.value !== "all" && hook.kind !== kind.value) return false;
+      const needle = search.value.trim().toLowerCase();
+      if (!needle) return true;
+      return Object.values(hook).flat().join(" ").toLowerCase().includes(needle);
+    }
+
+    function renderCard(hook) {
+      const examples = hook.examples.map(example => `<pre>${escapeHtml(example)}</pre>`).join("");
+      return `
+        <details ${expanded ? "open" : ""}>
+          <summary>
+            <div class="event-name">${escapeHtml(hook.name)}<span class="tag ${hook.kind === "block" ? "block" : ""}">${escapeHtml(kindLabels[hook.kind])}</span></div>
+            <div class="purpose">${escapeHtml(hook.summary)}</div>
+          </summary>
+          <div class="detail-grid">
+            <div><h4>When it runs</h4><p>${escapeHtml(hook.when)}</p></div>
+            <div><h4>Accepted response</h4><p>${formatCode(hook.response)}</p></div>
+            <div><h4>Behavioral effect</h4><p>${formatCode(hook.effect)}</p></div>
+            <div><h4>Exit / limits</h4><p>${formatCode(hook.exit)}</p></div>
+            <div><h4>Examples</h4>${examples}</div>
+            <div><h4>Notes</h4><p>${formatCode(hook.notes)}</p><p class="source"><a href="${hook.source}">Official documentation</a></p></div>
+          </div>
+        </details>`;
+    }
+
+    function formatCode(value) {
+      return escapeHtml(value).replace(/`([^`]+)`/g, "<code>$1</code>");
+    }
+
+    function render() {
+      const visible = hooks.filter(matches);
+      const groups = Object.keys(vendors)
+        .map(id => ({ id, items: visible.filter(hook => hook.vendor === id) }))
+        .filter(group => group.items.length);
+      catalog.innerHTML = groups.map(group => `
+        <section class="vendor" id="${group.id}">
+          <div class="vendor-head">
+            <div><h2>${escapeHtml(vendors[group.id].title)}</h2><p>${escapeHtml(vendors[group.id].subtitle)}</p></div>
+            <div class="count">${group.items.length} matching</div>
+          </div>
+          <div class="entries">${group.items.map(renderCard).join("")}</div>
+        </section>`).join("");
+      empty.style.display = visible.length ? "none" : "block";
+      expand.textContent = expanded ? "Collapse visible" : "Expand visible";
+    }
+
+    search.addEventListener("input", render);
+    kind.addEventListener("change", render);
+    expand.addEventListener("click", () => {
+      expanded = !expanded;
+      document.querySelectorAll("#catalog details").forEach(item => item.open = expanded);
+      expand.textContent = expanded ? "Collapse visible" : "Expand visible";
+    });
+    makeTabs();
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,512 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent Harness Tool Reference</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f5f3ee;
+      --panel: #fffdf8;
+      --text: #20211f;
+      --muted: #646861;
+      --line: #d9d6ce;
+      --accent: #285f5b;
+      --accent-soft: #deebe8;
+      --code: #eeece6;
+      --warn: #8a5618;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #171a19;
+        --panel: #202423;
+        --text: #eceeea;
+        --muted: #b1b7af;
+        --line: #3b413e;
+        --accent: #8bc3bb;
+        --accent-soft: #273d3a;
+        --code: #171a19;
+        --warn: #e6b56d;
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+    }
+    header, main, footer {
+      width: min(1240px, calc(100% - 32px));
+      margin-inline: auto;
+    }
+    header { padding: 44px 0 24px; }
+    h1 { margin: 0 0 8px; font-size: clamp(28px, 4vw, 46px); letter-spacing: -0.03em; }
+    h2 { margin: 0; font-size: 22px; }
+    h3 { margin: 0; font-size: 17px; }
+    p { margin: 6px 0; }
+    .lede { max-width: 850px; color: var(--muted); font-size: 17px; }
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+    }
+    .badge {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 10px;
+      color: var(--muted);
+      background: var(--panel);
+      font-size: 12px;
+    }
+    .scope {
+      margin: 16px 0 24px;
+      padding: 14px 16px;
+      border-left: 4px solid var(--warn);
+      background: var(--panel);
+    }
+    .controls {
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      padding: 12px 0;
+      background: color-mix(in srgb, var(--bg) 92%, transparent);
+      backdrop-filter: blur(10px);
+    }
+    input[type="search"] {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--panel);
+      color: var(--text);
+      font: inherit;
+    }
+    button {
+      padding: 9px 12px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: var(--panel);
+      color: var(--text);
+      cursor: pointer;
+    }
+    nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 4px 0 24px;
+    }
+    nav button.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: var(--panel);
+    }
+    .harness {
+      margin: 0 0 36px;
+      scroll-margin-top: 80px;
+    }
+    .harness-head {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: end;
+      gap: 16px;
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 10px;
+      margin-bottom: 12px;
+    }
+    .harness-head p { color: var(--muted); }
+    .count { color: var(--accent); font-weight: 700; white-space: nowrap; }
+    .tools { display: grid; gap: 9px; }
+    details {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--panel);
+      overflow: clip;
+    }
+    summary {
+      display: grid;
+      grid-template-columns: minmax(190px, .75fr) minmax(260px, 2fr) auto;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 14px;
+      cursor: pointer;
+      list-style: none;
+    }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: "+"; color: var(--accent); font-size: 20px; }
+    details[open] summary::after { content: "−"; }
+    .tool-name {
+      font: 700 14px/1.3 ui-monospace, SFMono-Regular, Consolas, monospace;
+      overflow-wrap: anywhere;
+    }
+    .purpose { color: var(--muted); }
+    .kind {
+      display: inline-block;
+      margin-left: 7px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      color: var(--accent);
+      background: var(--accent-soft);
+      font: 600 11px/1.5 system-ui, sans-serif;
+      vertical-align: 1px;
+    }
+    .detail-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      padding: 0 14px 14px;
+      border-top: 1px solid var(--line);
+    }
+    .detail-grid > div { padding-top: 12px; min-width: 0; }
+    .detail-grid h4 {
+      margin: 0 0 5px;
+      color: var(--muted);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    code, pre {
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      background: var(--code);
+    }
+    code { padding: 1px 4px; border-radius: 3px; }
+    pre {
+      margin: 0;
+      padding: 10px;
+      border-radius: 6px;
+      overflow: auto;
+      white-space: pre-wrap;
+      overflow-wrap: anywhere;
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .availability { color: var(--muted); font-size: 13px; }
+    .sources {
+      margin: 40px 0;
+      padding: 18px;
+      border: 1px solid var(--line);
+      background: var(--panel);
+    }
+    .sources a { color: var(--accent); }
+    .sources li { margin: 5px 0; }
+    .empty { display: none; padding: 30px 0; color: var(--muted); }
+    footer { padding: 0 0 40px; color: var(--muted); font-size: 12px; }
+    @media (max-width: 720px) {
+      summary { grid-template-columns: 1fr auto; }
+      summary .purpose { grid-column: 1 / -1; }
+      .detail-grid { grid-template-columns: 1fr; }
+      .controls { grid-template-columns: 1fr; }
+    }
+    @media print {
+      .controls, nav { display: none; }
+      details { break-inside: avoid; }
+      details > * { display: block; }
+      summary::after { display: none; }
+      body { background: white; color: black; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Agent Harness Tool Reference</h1>
+    <p class="lede">Built-in and orchestration tools for the four harness surfaces tracked by HarnessSpy, with compact input/output contracts and invocation examples. MCP is represented once per harness as a generic, server-defined tool kind.</p>
+    <div class="meta">
+      <span class="badge">Cursor Agent 2026.08.25-3e8eec8</span>
+      <span class="badge">Claude Code 2.1.286</span>
+      <span class="badge">GitHub Copilot CLI 1.0.86</span>
+      <span class="badge">VS Code 1.138.0</span>
+      <span class="badge">Generated 4 Oct 2026</span>
+    </div>
+  </header>
+  <main>
+    <div class="scope">
+      <strong>Scope.</strong> “All” means tools exposed by the installed Cursor session or listed by the current official/runtime references. Availability can still depend on operating system, model, feature flags, mode, plan, extensions, and connection state. Parameters marked <code>?</code> are optional. Output envelopes are summarized because several harnesses add version-dependent metadata.
+    </div>
+    <div class="controls">
+      <input id="search" type="search" placeholder="Filter by tool, purpose, parameter, or kind…" aria-label="Filter tools">
+      <button id="expand" type="button">Expand visible</button>
+    </div>
+    <nav id="tabs" aria-label="Harness filter"></nav>
+    <div id="catalog"></div>
+    <p class="empty" id="empty">No tools match the current filter.</p>
+    <section class="sources">
+      <h2>Sources and interpretation</h2>
+      <ul>
+        <li><strong>Harness inventory:</strong> HarnessSpy runtime identifiers and architecture in <code>src/Shared/HarnessSpy.Core/Models/HarnessIdentifiers.cs</code> and <code>src/architecture.md</code>.</li>
+        <li><strong>Cursor:</strong> schemas exposed to this Cursor session, including first-party dynamic tools. The public docs describe capabilities but do not guarantee one stable cross-version tool schema.</li>
+        <li><strong>Claude Code:</strong> installed <code>sdk-tools.d.ts</code> for 2.1.286 plus the <a href="https://code.claude.com/docs/en/tools-reference">official tools reference</a>. Conditional tools from cloud, Remote Control, review, workflow, and scheduling modes are retained and labeled.</li>
+        <li><strong>Copilot CLI:</strong> installed CLI help and the <a href="https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference">official CLI command reference</a>. GitHub documents names and purposes but not a stable public JSON schema for every built-in, so parameters are concise observed/documented contracts.</li>
+        <li><strong>VS Code Local:</strong> the <a href="https://code.visualstudio.com/docs/agents/reference/tools-reference">official tools and context reference</a> and current <code>microsoft/vscode-copilot-chat</code> tool-name source. UI references are shown where model-facing names can vary by harness generation.</li>
+        <li><strong>MCP:</strong> every MCP server publishes its own JSON Schema. The generic row shows the common envelope; server-specific tools are deliberately not expanded.</li>
+      </ul>
+    </section>
+  </main>
+  <footer>Self-contained HTML; no network access is required to browse or filter this file.</footer>
+  <script>
+    const C = (name, kind, use, input, output, example, availability = "Built-in") =>
+      ({ name, kind, use, input, output, example, availability });
+
+    const catalogs = [
+      {
+        id: "cursor",
+        title: "Cursor Agent",
+        subtitle: "Exact tools exposed to this Cursor session; first-party tools may be loaded dynamically.",
+        tools: [
+          C("Shell", "execution", "Run terminal commands, foreground or background.", "command:string; working_directory?:absolute path; block_until_ms?:number; description?:string; notify_on_output?:{pattern,reason,debounce_ms}; request_smart_mode_approval?:boolean", "exit code plus stdout/stderr; background calls return a shell/job id and output file.", '{"command":"dotnet test src/HarnessSpy.sln","working_directory":"C:\\\\repo","description":"Run solution tests"}'),
+          C("AwaitShell", "execution", "Wait for or poll a background shell job; can also perform a timed wait.", "shell_id?:string; block_until_ms?:number; pattern?:regex", "job status and newly available output, or timeout status.", '{"shell_id":"123","block_until_ms":60000,"pattern":"Build succeeded"}'),
+          C("Glob", "search", "Find files by glob pattern while honoring ignore files.", "glob_pattern:string; target_directory?:absolute path", "sorted matching file paths.", '{"target_directory":"C:\\\\repo","glob_pattern":"**/*.csproj"}'),
+          C("rg", "search", "Search file contents with ripgrep-compatible regular expressions.", "pattern:string; path?:path; glob?:glob; output_mode?:content|files_with_matches|count; -A?; -B?; -C?; -i?; type?; head_limit?; offset?; multiline?", "matching lines with paths/line numbers, matching paths, or counts.", '{"pattern":"class .*RuntimeEngine","path":"C:\\\\repo\\\\src","type":"cs","output_mode":"content"}'),
+          C("ReadFile", "read", "Read text, images, PDFs, or a selected line range.", "path:absolute path; offset?:1-based line; limit?:line count", "file text with line metadata, decoded document text, or image content.", '{"path":"C:\\\\repo\\\\README.md","offset":1,"limit":80}'),
+          C("ApplyPatch", "edit", "Create or update one file with Cursor's file-oriented patch grammar.", "free-form patch: Begin Patch + Add/Update File + hunks + End Patch", "patch application status and changed file.", '*** Begin Patch\\n*** Update File: C:\\\\repo\\\\a.txt\\n@@\\n-old\\n+new\\n*** End Patch'),
+          C("Delete", "edit", "Delete one file.", "path:absolute path", "success or a graceful not-found/security error.", '{"path":"C:\\\\repo\\\\obsolete.txt"}'),
+          C("EditNotebook", "notebook", "Replace one notebook-cell fragment or insert a cell.", "target_notebook:path; cell_idx:number; is_new_cell:boolean; cell_language:string; old_string:string; new_string:string", "updated notebook/cell diff status.", '{"target_notebook":"analysis.ipynb","cell_idx":0,"is_new_cell":true,"cell_language":"python","old_string":"","new_string":"print(42)"}'),
+          C("ReadLints", "diagnostics", "Read IDE diagnostics, optionally scoped to changed files.", "paths?:string[]", "diagnostics grouped by file and severity.", '{"paths":["C:\\\\repo\\\\src\\\\App.cs"]}'),
+          C("AskQuestion", "interaction", "Collect one or more multiple-choice answers from the user.", "title?:string; questions:[{id,prompt,options:[{id,label}],allow_multiple?:boolean}]", "selected option ids and optional free-text Other answer.", '{"title":"Target","questions":[{"id":"framework","prompt":"Choose a framework","options":[{"id":"wpf","label":"WPF"},{"id":"avalonia","label":"Avalonia"}]}]}'),
+          C("TodoWrite", "planning", "Create, replace, or merge the session todo list.", "merge:boolean; todos:[{id,content,status:pending|in_progress|completed|cancelled}]", "rendered updated todo list.", '{"merge":false,"todos":[{"id":"inventory","content":"Inventory tools","status":"in_progress"},{"id":"html","content":"Generate HTML","status":"pending"}]}'),
+          C("SwitchMode", "orchestration", "Request a switch between Agent and Plan mode.", "target_mode_id:agent|plan; explanation?:string", "approved/new mode or a declined request.", '{"target_mode_id":"plan","explanation":"The change needs an architecture decision."}'),
+          C("Subagent", "orchestration", "Launch or resume a specialized local/cloud subagent.", "description:string; prompt:string; subagent_type?:string; model?:string; resume?:id|self; file_attachments?:string[]; environment?:local|cloud; cloud_base_branch?:string; interrupt?:boolean; run_in_background?:boolean", "agent id, status, and final response; cloud agents may return review links.", '{"description":"Explore parser","prompt":"Map transcript parsing paths and return key files.","subagent_type":"explore","run_in_background":false}'),
+          C("CreateGoal", "orchestration", "Create an explicitly requested long-running goal.", "objective:string", "goal id/state.", '{"objective":"Keep the release branch merge-ready"}', "Conditional: only when explicitly requested"),
+          C("UpdateGoal", "orchestration", "Mark the current long-running goal active or complete.", "status:active|complete", "updated goal state.", '{"status":"complete"}', "Conditional: active goal required"),
+          C("GetDynamicTools", "discovery", "Discover schemas for first-party or MCP-backed dynamic tools.", "namespace?:string; toolName?:string; pattern?:regex", "namespace/tool matches, status, descriptions, and JSON input schemas.", '{"namespace":"user-datadog","pattern":"query|metric"}'),
+          C("CallDynamicTool", "orchestration", "Invoke a previously discovered dynamic tool.", "namespace:string; toolName:string; arguments:object; mcpDetails?:{description,requestSmartModeApproval?,smartModeBlockReason?}", "the selected tool's native structured result.", '{"namespace":"cursor","toolName":"WebSearch","arguments":{"search_term":"C# profiler API"}}'),
+          C("FetchMcpResource", "MCP resource", "Read or download an MCP resource URI.", "server:string; uri:string; downloadPath?:workspace-relative path; approval retry fields?", "resource text/content, or saved-file status when downloadPath is set.", '{"server":"docs","uri":"docs://architecture/current"}'),
+          C("MCP tool (generic)", "MCP", "Invoke any server-defined MCP tool after schema discovery.", "server/namespace:string; tool name:string; arguments:object defined by the server's JSON Schema", "server-defined content blocks or structuredContent; may include text, JSON, images, or resource links.", '{"server":"github","tool":"search_issues","arguments":{"query":"repo:org/repo is:open label:bug"}}', "Dynamic: configured MCP servers only"),
+          C("WebSearch", "web", "Search the public web for current information.", "search_term:string; explanation?:string", "ranked links, snippets, and synthesized highlights.", '{"search_term":"latest .NET profiling API documentation"}'),
+          C("WebFetch", "web", "Fetch a public HTTP(S) page as readable Markdown.", "url:string; approval retry fields?", "page title and converted Markdown, or HTTP/access error.", '{"url":"https://learn.microsoft.com/dotnet/"}'),
+          C("GenerateImage", "media", "Generate an image asset from a description.", "description:string; filename?:basename; reference_image_paths?:string[]; aspect_ratio?:1:1|4:3|3:4|16:9|9:16", "saved image path and rendered preview.", '{"description":"Flat monochrome architecture diagram of an agent loop","filename":"agent-loop.png","aspect_ratio":"16:9"}', "Conditional: explicit user image request"),
+          C("parallel", "orchestration", "Execute independent tool calls concurrently.", "tool_uses:[{recipient_name,parameters}]", "one result per child tool call.", '{"tool_uses":[{"recipient_name":"functions.Glob","parameters":{"glob_pattern":"**/*.cs"}},{"recipient_name":"functions.rg","parameters":{"pattern":"TODO"}}]}')
+        ]
+      },
+      {
+        id: "claude",
+        title: "Claude Code",
+        subtitle: "Official 2.1.286 built-ins, including tools that appear only in specific modes, plans, or environments.",
+        tools: [
+          C("Agent", "orchestration", "Spawn a subagent or teammate with an independent context.", "description:string; prompt:string; subagent_type?:string; model?:sonnet|opus|haiku|fable; run_in_background?:boolean; name?:string; isolation?:worktree|remote", "agent id/type, content blocks, model, duration, token/tool statistics.", '{"description":"Inspect tests","prompt":"Find missing edge cases.","subagent_type":"Explore","run_in_background":true}'),
+          C("Artifact", "publishing", "Publish, read, list, update, or manage assets for a claude.ai artifact.", "action?:publish|list|read|...; file_path?:string; url?:string; title?; description?; icon?; scope?; asset_id?; file_paths?; capabilities?", "artifact URL/id/version, listing, content, or asset-operation result.", '{"action":"publish","file_path":"C:\\\\Temp\\\\report.html","title":"Tool Reference","icon":"code"}', "Conditional: eligible plan and login"),
+          C("AskUserQuestion", "interaction", "Ask 1–4 multiple-choice questions, each with 2–4 choices.", "questions:[{question,header,options:[{label,description,preview?}],multiSelect?:boolean}]; answers?/annotations?/metadata?", "answers keyed by question/header plus optional notes and preview metadata.", '{"questions":[{"question":"Which target?","header":"Target","options":[{"label":"CLI","description":"Terminal harness"},{"label":"IDE","description":"Editor harness"}],"multiSelect":false}]}'),
+          C("Bash", "execution", "Execute a shell command, optionally in the background.", "command:string; timeout?:ms; description?:string; run_in_background?:boolean; dangerouslyDisableSandbox?:boolean", "stdout; stderr; interrupted; backgroundTaskId?; image/raw-output metadata?", '{"command":"dotnet test","timeout":600000,"description":"Run the test suite"}'),
+          C("PowerShell", "execution", "Execute PowerShell natively on supported Windows sessions.", "command:string; timeout?:ms; description?:string; run_in_background?:boolean", "stdout; stderr; exit/interruption/background metadata.", '{"command":"Get-ChildItem -Recurse -Filter *.cs","description":"List C# source files"}', "Conditional: Windows/preview setting"),
+          C("CronCreate", "scheduling", "Schedule a recurring or one-shot prompt in the session.", "cron:string; prompt:string; recurring?:boolean; durable?:boolean", "job id, schedule, and next-fire metadata.", '{"cron":"0 9 * * 1","prompt":"Review open release blockers","recurring":true,"durable":true}'),
+          C("CronDelete", "scheduling", "Delete a scheduled task.", "id:string", "deletion confirmation.", '{"id":"cron_123"}'),
+          C("CronList", "scheduling", "List scheduled tasks.", "none", "jobs with ids, prompts, schedules, and next runs.", '{}'),
+          C("Edit", "edit", "Replace a unique string or all occurrences in a file.", "file_path:absolute path; old_string:string; new_string:string; replace_all?:boolean", "updated-file status and diff summary.", '{"file_path":"C:\\\\repo\\\\a.cs","old_string":"oldName","new_string":"newName","replace_all":true}'),
+          C("Write", "edit", "Create or overwrite a file.", "file_path:absolute path; content:string", "write status and file path.", '{"file_path":"C:\\\\repo\\\\notes.txt","content":"Done\\n"}'),
+          C("Read", "read", "Read text, images, notebooks, PDFs, or background-task output files.", "file_path:absolute path; offset?:line; limit?:count; pages?:range", "numbered text, decoded document/image content, or task output.", '{"file_path":"C:\\\\repo\\\\README.md","offset":1,"limit":100}'),
+          C("Glob", "search", "Find paths matching a glob.", "pattern:string; path?:directory", "matching paths ordered by modification time.", '{"pattern":"**/*Tests.cs","path":"C:\\\\repo"}', "Default on Windows; conditional elsewhere"),
+          C("Grep", "search", "Regex-search file contents with ripgrep.", "pattern:string; path?:string; glob?:string; output_mode?:content|files_with_matches|count; -A?; -B?; context?; -i?; -n?; -o?; type?; head_limit?; offset?; multiline?", "matching content, paths, or counts.", '{"pattern":"TODO|FIXME","path":"C:\\\\repo","output_mode":"content","-n":true}'),
+          C("NotebookEdit", "notebook", "Replace, insert, or delete a Jupyter cell.", "notebook_path:absolute path; cell_id?:string; new_source:string; cell_type?:code|markdown; edit_mode?:replace|insert|delete", "cell id/type and notebook update status.", '{"notebook_path":"C:\\\\repo\\\\a.ipynb","new_source":"# Results","cell_type":"markdown","edit_mode":"insert"}'),
+          C("LSP", "code intelligence", "Query definitions, references, symbols, hover data, and diagnostics.", "operation:string; filePath/path?:string; line?:number; character?:number; query?:string", "locations, symbols, hover text, references, or diagnostics.", '{"operation":"findReferences","filePath":"C:\\\\repo\\\\App.cs","line":12,"character":18}', "Conditional: language-server plugin"),
+          C("Monitor", "execution", "Stream line events from a command or WebSocket into the conversation.", "description:string; timeout_ms:number; command?:string; ws?:{url,protocols?}", "monitor id plus streamed line/frame events and terminal status.", '{"description":"Watch test output","timeout_ms":300000,"command":"dotnet watch test"}'),
+          C("EnterPlanMode", "planning", "Switch into read-only planning mode.", "none", "mode-switch confirmation.", '{}'),
+          C("ExitPlanMode", "planning", "Present the plan for approval and leave plan mode.", "allowedPrompts?:deprecated Bash prompt descriptors", "approval/feedback and resulting mode.", '{}'),
+          C("EnterWorktree", "git", "Create and enter an isolated worktree or switch to an existing one.", "name?:string; path?:string", "worktree path, branch, and switch status.", '{"name":"tool-report"}'),
+          C("ExitWorktree", "git", "Return to the original directory and optionally remove the worktree.", "action:keep|remove; discard_changes?:boolean", "exit/removal status and retained path when kept.", '{"action":"keep"}'),
+          C("EndConversation", "interaction", "End a session in narrowly defined safety or demonstration cases.", "reason?:string (runtime-defined)", "conversation-ended status.", '{"reason":"User explicitly requested the demonstration."}', "Conditional and rarely exposed"),
+          C("ListAgents", "orchestration", "List messageable subagents, teammates, and connected sessions.", "none", "agent/session ids, names, states, and locations.", '{}', "Conditional: cross-session messaging"),
+          C("SendMessage", "orchestration", "Send text to another agent or connected Claude session.", "to:string agent id/name; message:string; summary?:string", "delivery/resume status.", '{"to":"reviewer","message":"Please verify the null-handling change.","summary":"Verify null handling"}', "Conditional: target agent/session"),
+          C("SubagentHandback", "orchestration", "Return a subagent report through auto-mode classification.", "report/content:string plus runtime provenance", "classified handback delivered to the parent conversation.", '{"report":"No blocking issues found."}', "Conditional: auto mode local subagent"),
+          C("TaskCreate", "planning", "Create a task-list item.", "subject:string; description:string; activeForm?:string; metadata?:object", "task id and created task.", '{"subject":"Run tests","description":"Run the full solution test suite","activeForm":"Running tests"}'),
+          C("TaskGet", "planning", "Get one task and its dependency details.", "taskId:string", "task object with status, owner, blockers, and metadata.", '{"taskId":"3"}'),
+          C("TaskList", "planning", "List current tasks.", "none", "task summaries and dependency/status data.", '{}'),
+          C("TaskUpdate", "planning", "Update, assign, link, complete, or delete a task.", "taskId:string; subject?; description?; activeForm?; status?:pending|in_progress|completed|deleted; addBlocks?:string[]; addBlockedBy?:string[]; owner?:string; metadata?:object", "updated task.", '{"taskId":"3","status":"completed"}'),
+          C("TaskOutput", "execution", "Read output from a background task.", "task_id:string; block?:boolean; timeout?:number", "task state and accumulated output.", '{"task_id":"task_42","block":true,"timeout":30000}', "Deprecated: use Read on output path"),
+          C("TaskStop", "execution", "Stop a background task or named agent.", "task_id?:string; shell_id?:deprecated string", "stop status and target metadata.", '{"task_id":"task_42"}'),
+          C("TodoWrite", "planning", "Replace the legacy session checklist.", "todos:[{content,status:pending|in_progress|completed,activeForm}]", "updated checklist.", '{"todos":[{"content":"Generate report","status":"in_progress","activeForm":"Generating report"}]}', "Disabled by default when Task tools are enabled"),
+          C("ListMcpResourcesTool", "MCP resource", "List resources advertised by connected MCP servers.", "server?:string", "resource descriptors with server, URI, name, description, and MIME type.", '{"server":"docs"}'),
+          C("RefreshMcpTools", "MCP", "Refresh deferred tool definitions from one or all connected MCP servers.", "server?:string", "refresh status, changed tool counts, and per-server errors.", '{"server":"github"}', "Conditional: deferred MCP tool loading"),
+          C("ReadMcpResourceDir", "MCP resource", "List entries beneath an MCP directory-resource URI.", "server:string; uri:string", "child resource descriptors and pagination metadata when supplied.", '{"server":"docs","uri":"docs://api/"}', "Conditional: server exposes directory resources"),
+          C("ReadMcpResourceTool", "MCP resource", "Read one MCP resource URI.", "server:string; uri:string", "MCP text/blob resource contents.", '{"server":"docs","uri":"docs://api/reference"}'),
+          C("WaitForMcpServers", "MCP", "Wait for MCP servers still connecting.", "server names:string[] (runtime-defined)", "per-server connected/failed/timeout state.", '{"servers":["github","docs"]}', "Only when tool search is disabled"),
+          C("ToolSearch", "discovery", "Search for and load deferred tools, including MCP tools.", "query:string; max_results?:number", "matching tool names/descriptions and loaded schemas.", '{"query":"github issue search"}', "Conditional: tool search enabled"),
+          C("MCP tool (generic)", "MCP", "Invoke a server-defined MCP tool named mcp__server__tool.", "arbitrary object defined by the tool's inputSchema", "MCP content blocks or structuredContent; error flag when failed.", '{"repository":"org/repo","query":"is:issue is:open label:bug"}', "Dynamic: connected MCP servers"),
+          C("WebFetch", "web", "Fetch a URL and answer a prompt over its contents.", "url:string; prompt:string", "processed answer with source content/citations as available.", '{"url":"https://example.com/docs","prompt":"Summarize the API limits."}'),
+          C("WebSearch", "web", "Search the web.", "query:string; allowed_domains?:string[]; blocked_domains?:string[]", "search results with titles, URLs, snippets, and citations.", '{"query":"Claude Code tools reference","allowed_domains":["code.claude.com"]}'),
+          C("Skill", "extension", "Load and execute a skill in the main conversation.", "skill:string; args?:string", "skill instructions/content and execution status.", '{"skill":"dotnet-memory-analysis","args":"analyze C:\\\\dumps\\\\app.dmp"}', "Dynamic: installed/bundled skills"),
+          C("Workflow", "orchestration", "Run a script that composes many subagents.", "script?:string; name?:string; args?:object; scriptPath?:string; resumeFromRunId?:string", "run id, persisted script path, phase/agent results, consolidated output.", '{"name":"research","args":{"question":"Compare the harness schemas"}}', "Conditional: workflow capability"),
+          C("ReportFindings", "review", "Emit structured code-review findings.", "level?:low|medium|high|xhigh|max; findings:[{file,line?,summary,short_summary?,failure_scenario,category?,verdict?,outcome?}]", "rendered findings and acceptance status.", '{"level":"high","findings":[{"file":"src/App.cs","line":10,"summary":"Null input crashes","failure_scenario":"Calling Parse(null) dereferences input.","category":"correctness"}]}', "Conditional: review instructions"),
+          C("SendFeedback", "feedback", "Draft product/model feedback for user review.", "type:bug|idea|missing_capability; title:string; details:string; area?:string; failure_mode?:enum; task_category?:enum", "local draft id/status; nothing is sent until user approval.", '{"type":"bug","title":"Tool output is truncated","details":"**What happened:** Output stopped early.\\n**Repro:** Run the command.","area":"Bash"}'),
+          C("RemoteTrigger", "automation", "Create, update, run, and inspect claude.ai routines.", "action:list|get|create|update|run|create_webhook_trigger|list_runs|get_run_log; trigger_id?; session_id?; cursor?; body?:object", "trigger/run descriptors or paged run log.", '{"action":"list"}', "Conditional: eligible plan and policy"),
+          C("PushNotification", "notification", "Send a desktop/phone notification.", "message:string; status:proactive", "delivery status by connected channel.", '{"message":"The test run completed successfully.","status":"proactive"}', "Conditional: supported host/Remote Control"),
+          C("SendUserFile", "file transfer", "Send generated files to a connected user device.", "paths/files:string[]; caption?:string; display?:render|attach", "uploaded file descriptors and delivery status.", '{"paths":["C:\\\\Temp\\\\report.html"],"caption":"Generated reference","display":"attach"}', "Conditional: cloud or Remote Control"),
+          C("ShareOnboardingGuide", "publishing", "Upload ONBOARDING.md and create a Claude Code share link.", "file_path/path:string", "share URL and upload status.", '{"file_path":"C:\\\\repo\\\\ONBOARDING.md"}', "Conditional: eligible subscription"),
+          C("ScheduleWakeup", "scheduling", "Select the next self-paced loop wake time or stop it.", "delaySeconds?:60..3600; reason?:string; prompt?:string; stop?:boolean; noop?:boolean", "scheduled timestamp or cancellation.", '{"stop":true}', "Conditional: dynamic /loop"),
+          C("ReadNotifications", "notification", "Read pending cross-session notifications.", "none", "notification list with source and content.", '{}', "Conditional/internal surface"),
+          C("ShowOnboardingRolePicker", "interaction", "Show the onboarding role selector.", "none", "selected role or dismissal status.", '{}', "Conditional: onboarding flow"),
+          C("ClaudeDesign", "design", "Discover and invoke Claude Design operations.", "operation:string; arguments:object", "operation-specific structured result.", '{"operation":"list","arguments":{}}', "Conditional: design surface"),
+          C("Projects", "project storage", "Read, search, write, or delete project documents and memory.", "method:project_info|project_read|project_search|project_write|project_delete|project_memory_list|project_memory_read; path?; content?; local_path?; present_to_user?; query?; n?", "project/document metadata, search hits, content, or write/delete status.", '{"method":"project_search","query":"harness tools","n":5}', "Conditional: claude.ai project"),
+          C("ProposeSkills", "skills", "Propose up to three new or improved skills for approval.", "proposals:[{name,kind:new|improvement,target?,description,evidence?,skillMd}]", "review/save decisions and installed skill paths.", '{"proposals":[{"name":"tool-audit","kind":"new","description":"Audit agent tool catalogs.","skillMd":"---\\nname: tool-audit\\n---\\nAudit tools."}]}', "Conditional: skill learning"),
+          C("ProposeGoal", "orchestration", "Propose a verifiable persistent completion condition.", "condition:string; ask_user?:boolean", "approved goal state or rejection.", '{"condition":"All HarnessSpy tests pass.","ask_user":true}', "Conditional: goal feature")
+        ]
+      },
+      {
+        id: "copilot",
+        title: "GitHub Copilot CLI",
+        subtitle: "Names from the 1.0.86 tool-availability reference; shell names vary by host OS.",
+        tools: [
+          C("bash", "execution", "Execute a shell command on Unix-like hosts.", "command:string; description?:string; timeout?:number; mode/background?:boolean", "command output, exit status, and optional session id.", '{"command":"dotnet test","timeout":600000}'),
+          C("powershell", "execution", "Execute a PowerShell command on Windows.", "command:string; description?:string; timeout?:number; mode/background?:boolean", "stdout/stderr, exit status, and optional session id.", '{"command":"dotnet test","timeout":600000}'),
+          C("list_bash", "execution", "List active Bash sessions.", "none or optional state filter", "shell session ids, commands, and states.", '{}', "Unix-like hosts"),
+          C("list_powershell", "execution", "List active PowerShell sessions.", "none or optional state filter", "PowerShell session ids, commands, and states.", '{}', "Windows hosts"),
+          C("read_bash", "execution", "Read output from a Bash session.", "session_id/id:string; offset?:number; wait?:boolean", "new output and process state.", '{"session_id":"shell-1"}', "Unix-like hosts"),
+          C("read_powershell", "execution", "Read output from a PowerShell session.", "session_id/id:string; offset?:number; wait?:boolean", "new output and process state.", '{"session_id":"shell-1"}', "Windows hosts"),
+          C("stop_bash", "execution", "Terminate a Bash session.", "session_id/id:string", "termination status.", '{"session_id":"shell-1"}', "Unix-like hosts"),
+          C("stop_powershell", "execution", "Terminate a PowerShell session.", "session_id/id:string", "termination status.", '{"session_id":"shell-1"}', "Windows hosts"),
+          C("write_bash", "execution", "Send stdin to a Bash session.", "session_id/id:string; input/data:string; eof?:boolean", "write acknowledgement and process state.", '{"session_id":"shell-1","input":"y\\n"}', "Unix-like hosts"),
+          C("write_powershell", "execution", "Send stdin to a PowerShell session.", "session_id/id:string; input/data:string; eof?:boolean", "write acknowledgement and process state.", '{"session_id":"shell-1","input":"y\\n"}', "Windows hosts"),
+          C("view", "read", "Read a file or list a directory.", "path:string; line_start/offset?:number; line_end/limit?:number", "numbered file content or directory entries.", '{"path":"README.md","line_start":1,"line_end":80}'),
+          C("create", "edit", "Create a new file.", "path:string; content:string", "created path and status/diff.", '{"path":"docs/notes.md","content":"# Notes\\n"}'),
+          C("edit", "edit", "Edit a file by exact string replacement.", "path:string; old_text/old_string:string; new_text/new_string:string; replace_all?:boolean", "edit status and diff.", '{"path":"src/App.cs","old_text":"OldName","new_text":"NewName"}'),
+          C("apply_patch", "edit", "Apply a multi-file unified/custom patch.", "patch:string", "per-file patch status and diff.", '{"patch":"*** Begin Patch\\n*** Update File: a.txt\\n@@\\n-old\\n+new\\n*** End Patch"}'),
+          C("glob", "search", "Find files matching one or more glob patterns.", "pattern/patterns:string|string[]; path?:string; limit?:number", "matching paths.", '{"pattern":"**/*.csproj","path":"."}'),
+          C("grep", "search", "Search file text with a regular expression.", "pattern:string; path?:string; include/glob?:string; case_sensitive?:boolean; context?:number; limit?:number", "matching lines with paths and line numbers.", '{"pattern":"TODO|FIXME","path":"src","glob":"*.cs"}'),
+          C("rg", "search", "Alias/alternate implementation for text search.", "pattern:string; path?:string; glob?:string; flags/context/limit?:mixed", "ripgrep-style matches.", '{"pattern":"class .*Parser","path":"src"}'),
+          C("list_agents", "orchestration", "List available built-in and custom agents.", "none or optional filter", "agent names, descriptions, and availability.", '{}'),
+          C("task", "orchestration", "Run a subagent, optionally in the background.", "agent/type?:string; prompt/description:string; background?:boolean; model?:string", "task/agent id, status, and final response.", '{"agent":"explore","prompt":"Map the parser architecture.","background":true}'),
+          C("read_agent", "orchestration", "Read status/output from a background agent.", "agent_id/id:string; wait?:boolean", "agent state and accumulated/final output.", '{"agent_id":"agent-1","wait":true}'),
+          C("write_agent", "orchestration", "Send a follow-up message to a running agent.", "agent_id/id:string; message:string", "delivery acknowledgement.", '{"agent_id":"agent-1","message":"Also inspect the VS Code path."}'),
+          C("ask_user", "interaction", "Ask the user a clarifying question.", "question:string; choices/options?:string[]; multi_select?:boolean", "selected choice(s) or free-text answer.", '{"question":"Which surface should be primary?","choices":["CLI","VS Code"]}'),
+          C("skill", "extension", "Invoke a discovered custom skill.", "name/skill:string; arguments/args?:string|object", "loaded skill instructions and execution result.", '{"skill":"dotnet-memory-analysis","args":"analyze app.dmp"}', "Dynamic: enabled skills"),
+          C("web_fetch", "web", "Fetch and parse URL content.", "url:string; prompt/query?:string", "parsed page content or focused answer.", '{"url":"https://docs.github.com/copilot/"}'),
+          C("memory", "memory", "Store a fact in Copilot persistent memory.", "fact/content:string; scope?:string; citations/source?:string", "stored memory id/status.", '{"fact":"HarnessSpy builds with .NET 10."}', "Conditional: memory enabled"),
+          C("MCP tool (generic)", "MCP", "Invoke a tool from a configured MCP server.", "server name + tool name; arguments:object defined by the server", "server-defined MCP content/structured result.", '{"server":"github","tool":"search_issues","arguments":{"query":"repo:org/repo is:open"}}', "Dynamic: configured/built-in MCP servers")
+        ]
+      },
+      {
+        id: "vscode",
+        title: "VS Code Local Agent",
+        subtitle: "Public # references for the Local harness; model-facing native names and availability vary by VS Code/Copilot generation.",
+        tools: [
+          C("#read/readFile · read_file", "read", "Read a workspace file.", "filePath/path:string; startLine/offset?:number; endLine/limit?:number", "file content with line locations.", '{"filePath":"C:\\\\repo\\\\README.md","startLine":1,"endLine":80}'),
+          C("#read/problems · get_errors", "diagnostics", "Read Problems-panel diagnostics.", "filePaths?:string[]; severity?:string; includeWarnings?:boolean", "diagnostics with URI, range, severity, code, and message.", '{"filePaths":["C:\\\\repo\\\\src\\\\App.cs"]}'),
+          C("#search/changes · get_changed_files", "git", "List source-control changes and diffs.", "repositoryPath?:string; includeDiff?:boolean", "changed paths, status, and optional patches.", '{"repositoryPath":"C:\\\\repo","includeDiff":true}'),
+          C("#search/codebase · semantic_search", "search", "Semantically find relevant workspace code.", "query:string; scope/path?:string; topK/maxResults?:number", "ranked code excerpts with file/range metadata.", '{"query":"Where are transcript tool calls correlated?"}'),
+          C("#search/fileSearch · file_search", "search", "Find files by glob/name pattern.", "query/pattern:string; maxResults?:number", "matching workspace URIs.", '{"query":"**/*Parser.cs"}'),
+          C("#search/listDirectory · list_dir", "read", "List directory contents.", "path:string; depth?:number", "child names, types, and URIs.", '{"path":"C:\\\\repo\\\\src"}'),
+          C("#search/textSearch · grep_search", "search", "Regex/text search across workspace files.", "query/pattern:string; path/include?:string; isRegexp?:boolean; isCaseSensitive?:boolean; maxResults?:number", "matches with file, range, and preview.", '{"query":"TODO","path":"src","isRegexp":false}'),
+          C("#search/usages", "code intelligence", "Find definitions, references, and implementations for a symbol.", "uri/filePath:string; position:{line,character}; kind?:definition|references|implementation", "symbol locations and previews.", '{"filePath":"C:\\\\repo\\\\src\\\\App.cs","position":{"line":10,"character":15},"kind":"references"}'),
+          C("#edit/createDirectory · create_directory", "edit", "Create a workspace directory.", "path:string", "created directory URI/status.", '{"path":"C:\\\\repo\\\\docs\\\\generated"}'),
+          C("#edit/createFile · create_file", "edit", "Create a workspace file.", "filePath/path:string; content:string", "created file URI and edit status.", '{"filePath":"C:\\\\repo\\\\docs\\\\notes.md","content":"# Notes\\n"}'),
+          C("#edit/editFiles · insert_edit_into_file", "edit", "Apply one or more edits to workspace files.", "filePath/path:string; explanation?:string; edits/code:string or edit operations", "workspace edit/diff status.", '{"filePath":"C:\\\\repo\\\\src\\\\App.cs","explanation":"Add guard clause","code":"// replacement content"}'),
+          C("apply_patch", "edit", "Apply a patch when the selected model uses patch editing.", "patch:string", "per-file patch status and diff.", '{"patch":"*** Begin Patch\\n*** Update File: a.txt\\n@@\\n-old\\n+new\\n*** End Patch"}'),
+          C("replace_string_in_file", "edit", "Replace one exact string in a file.", "filePath:string; oldString:string; newString:string", "replacement status and diff.", '{"filePath":"C:\\\\repo\\\\a.cs","oldString":"Old","newString":"New"}'),
+          C("multi_replace_string_in_file", "edit", "Apply multiple exact replacements.", "filePath:string; replacements:[{oldString,newString}]", "replacement counts and diff.", '{"filePath":"C:\\\\repo\\\\a.cs","replacements":[{"oldString":"A","newString":"B"},{"oldString":"C","newString":"D"}]}'),
+          C("#edit/editNotebook · edit_notebook_file", "notebook", "Edit or insert notebook cells.", "notebookPath:string; edits/cellId/index/source/language?:mixed", "notebook edit status and affected cells.", '{"notebookPath":"C:\\\\repo\\\\a.ipynb","cellIndex":0,"newSource":"print(42)"}'),
+          C("#read/getNotebookSummary", "notebook", "List notebook cells and metadata.", "notebookPath:string", "cell ids, indices, languages, sources, and execution state.", '{"notebookPath":"C:\\\\repo\\\\a.ipynb"}'),
+          C("#read/readNotebookCellOutput", "notebook", "Read a notebook cell's output.", "notebookPath:string; cellId/index:string|number", "text/rich output items and execution metadata.", '{"notebookPath":"C:\\\\repo\\\\a.ipynb","cellIndex":0}'),
+          C("#execute/runNotebookCell", "notebook", "Execute a notebook cell.", "notebookPath:string; cellId/index:string|number", "execution status and output reference.", '{"notebookPath":"C:\\\\repo\\\\a.ipynb","cellIndex":0}'),
+          C("#execute/runInTerminal · run_in_terminal", "execution", "Run a command in the integrated terminal.", "command:string; explanation?:string; isBackground?:boolean; timeout?:number", "terminal id, output, exit code, and continuation state.", '{"command":"dotnet test","explanation":"Run the solution tests","isBackground":false}'),
+          C("#execute/getTerminalOutput · get_terminal_output", "execution", "Read output from a running terminal command.", "terminalId/id:string; wait?:boolean", "new output and command/process state.", '{"terminalId":"terminal-1","wait":true}'),
+          C("#execute/createAndRunTask · create_and_run_task", "execution", "Create and run a VS Code task.", "task:{label,type,command,args?,options?}|task definition", "task execution id, output reference, and exit state.", '{"task":{"label":"Build","type":"shell","command":"dotnet build"}}'),
+          C("#execute/testFailure · test_failure", "testing", "Read detailed unit-test failure information.", "testId?:string; filePath?:string", "failure message, stack trace, expected/actual, and source location.", '{"testId":"HarnessSpy.Tests.ParserTests.ParsesTool"}'),
+          C("#read/terminalLastCommand · terminal_last_command", "execution", "Read the last terminal command and output.", "terminalId?:string", "command text, output, and exit code.", '{}'),
+          C("#read/terminalSelection · terminal_selection", "execution", "Read the current terminal selection.", "terminalId?:string", "selected terminal text.", '{}'),
+          C("#web/fetch · fetch_webpage", "web", "Fetch a URL through VS Code's web tool.", "urls/url:string|string[]; query?:string", "parsed page content and URL metadata.", '{"url":"https://code.visualstudio.com/docs/agents/"}'),
+          C("#browser (generic tool set)", "browser", "Navigate, inspect, and interact with browser pages.", "operation-specific: URL, selector/ref, text, key, screenshot options", "page state, accessibility snapshot, action result, or screenshot.", '{"operation":"open","url":"http://localhost:3000"}', "Conditional: browser tools enabled"),
+          C("#githubRepo · github_repo", "GitHub", "Semantic search in a GitHub repository.", "repo:string owner/name; query:string", "ranked repository code/document excerpts.", '{"repo":"microsoft/vscode","query":"language model tool registration"}'),
+          C("#githubTextSearch", "GitHub", "Text/code search across a GitHub repository or organization.", "query:string; repo?:owner/name; org?:string; path?:string", "GitHub search matches with URLs and snippets.", '{"repo":"microsoft/vscode-copilot-chat","query":"ToolName.ReadFile"}'),
+          C("#agent/runSubagent · runSubagent", "orchestration", "Delegate a task to an isolated subagent context.", "description/prompt:string; agentName/type?:string; model?:string", "subagent result and execution metadata.", '{"description":"Map tool schemas","prompt":"Inspect the tool implementations and summarize inputs."}'),
+          C("#todos · manage_todo_list", "planning", "Create and update a task checklist.", "todoList/todos:[{id,title/content,status}]", "updated todo list.", '{"todos":[{"id":"1","title":"Inspect schemas","status":"in-progress"}]}'),
+          C("#vscode/askQuestions · vscode_askQuestions", "interaction", "Ask one or more interactive questions.", "questions:[{header,question,options?,allowFreeform?,multiSelect?}]", "answers keyed by question id/header.", '{"questions":[{"header":"Target","question":"Choose target","options":["CLI","IDE"]}]}'),
+          C("#newWorkspace · create_new_workspace", "workspace", "Create/scaffold a new workspace.", "query/prompt:string; name?:string; location?:string", "created workspace URI and generated files.", '{"query":"Create a minimal C# console app","name":"Sample"}'),
+          C("#vscode/extensions", "extension", "Search installed/Marketplace extensions and metadata.", "query:string; installedOnly?:boolean", "extension ids, versions, descriptions, and install state.", '{"query":"C# language support"}'),
+          C("#vscode/installExtension · install_extension", "extension", "Install a VS Code extension.", "id:string publisher.name; version?:string; preRelease?:boolean", "install/reload status.", '{"id":"ms-dotnettools.csharp"}'),
+          C("#vscode/getProjectSetupInfo · get_project_setup_info", "workspace", "Get project scaffolding/setup guidance.", "projectType/query:string; folder?:string", "recommended commands, files, extensions, and configuration.", '{"projectType":"ASP.NET Core Web API","folder":"C:\\\\repo"}'),
+          C("#vscode/runCommand · run_vscode_command", "VS Code", "Execute an allowlisted VS Code command.", "commandId:string; args?:unknown[]", "command-specific result or execution acknowledgement.", '{"commandId":"workbench.action.files.saveAll","args":[]}'),
+          C("#vscode/VSCodeAPI · get_vscode_api", "VS Code", "Look up VS Code API and editor functionality.", "query:string", "relevant API symbols, signatures, and documentation excerpts.", '{"query":"How do extensions register a language model tool?"}'),
+          C("view_image", "media", "Inspect an image file in the workspace.", "path/filePath:string", "decoded image content and dimensions/metadata.", '{"path":"C:\\\\repo\\\\diagram.png"}'),
+          C("read_project_structure", "workspace", "Summarize project/folder structure.", "path?:string; depth?:number", "structured directory/project overview.", '{"path":"C:\\\\repo","depth":3}'),
+          C("search_workspace_symbols", "code intelligence", "Search symbols indexed by VS Code.", "query:string; maxResults?:number", "symbol names, kinds, containers, and locations.", '{"query":"TranscriptParser"}'),
+          C("test_search / runTests", "testing", "Discover tests or run selected tests.", "query/testIds/files?:string|string[]; coverage?:boolean", "test ids/statuses; run output and failures.", '{"testIds":["HarnessSpy.Tests.ParserTests"],"coverage":false}'),
+          C("tool_search", "discovery", "Search deferred tool definitions.", "query:string", "matching tools and loaded schemas.", '{"query":"GitHub pull request"}', "Conditional: deferred tool loading"),
+          C("MCP tool (generic)", "MCP", "Invoke any enabled MCP tool contributed to VS Code.", "server/tool identity plus arguments defined by inputSchema", "server-defined MCP content or structuredContent.", '{"server":"github","tool":"search_pull_requests","arguments":{"query":"repo:org/repo is:open"}}', "Dynamic: configured MCP servers"),
+          C("Extension tool (generic)", "extension", "Invoke a tool registered by a VS Code extension.", "extension-defined JSON Schema", "extension-defined language-model-tool result content.", '{"extension":"publisher.extension","tool":"analyzeProject","arguments":{"uri":"file:///C:/repo"}}', "Dynamic: installed/enabled extensions")
+        ]
+      }
+    ];
+
+    const escapeHtml = value => String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;");
+
+    const tabs = document.getElementById("tabs");
+    const catalog = document.getElementById("catalog");
+    const search = document.getElementById("search");
+    const empty = document.getElementById("empty");
+    const expand = document.getElementById("expand");
+    let selected = "all";
+    let expanded = false;
+
+    function renderTabs() {
+      const entries = [{ id: "all", title: "All harnesses" }, ...catalogs];
+      tabs.innerHTML = entries.map(entry =>
+        `<button type="button" data-id="${entry.id}" class="${selected === entry.id ? "active" : ""}">${escapeHtml(entry.title)}</button>`
+      ).join("");
+      tabs.querySelectorAll("button").forEach(button => {
+        button.addEventListener("click", () => {
+          selected = button.dataset.id;
+          renderTabs();
+          render();
+        });
+      });
+    }
+
+    function render() {
+      const query = search.value.trim().toLowerCase();
+      let visibleCount = 0;
+      catalog.innerHTML = catalogs
+        .filter(harness => selected === "all" || selected === harness.id)
+        .map(harness => {
+          const tools = harness.tools.filter(tool =>
+            !query || Object.values(tool).some(value => String(value).toLowerCase().includes(query))
+          );
+          if (!tools.length) return "";
+          visibleCount += tools.length;
+          return `
+            <section class="harness" id="${harness.id}">
+              <div class="harness-head">
+                <div>
+                  <h2>${escapeHtml(harness.title)}</h2>
+                  <p>${escapeHtml(harness.subtitle)}</p>
+                </div>
+                <div class="count">${tools.length} tools</div>
+              </div>
+              <div class="tools">
+                ${tools.map(tool => `
+                  <details ${expanded ? "open" : ""}>
+                    <summary>
+                      <span class="tool-name">${escapeHtml(tool.name)}<span class="kind">${escapeHtml(tool.kind)}</span></span>
+                      <span class="purpose">${escapeHtml(tool.use)}</span>
+                    </summary>
+                    <div class="detail-grid">
+                      <div><h4>Input parameters</h4><p><code>${escapeHtml(tool.input)}</code></p></div>
+                      <div><h4>Output</h4><p>${escapeHtml(tool.output)}</p></div>
+                      <div><h4>Example input</h4><pre>${escapeHtml(tool.example)}</pre></div>
+                      <div><h4>Availability</h4><p class="availability">${escapeHtml(tool.availability)}</p></div>
+                    </div>
+                  </details>
+                `).join("")}
+              </div>
+            </section>`;
+        }).join("");
+      empty.style.display = visibleCount ? "none" : "block";
+    }
+
+    search.addEventListener("input", render);
+    expand.addEventListener("click", () => {
+      expanded = !expanded;
+      expand.textContent = expanded ? "Collapse visible" : "Expand visible";
+      document.querySelectorAll("#catalog details").forEach(detail => detail.open = expanded);
+    });
+    renderTabs();
+    render();
+  </script>
+</body>
+</html>
