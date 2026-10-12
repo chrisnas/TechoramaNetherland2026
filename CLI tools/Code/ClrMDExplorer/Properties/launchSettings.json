@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ClrMDExplorer": {
+      "commandName": "Project",
+      "commandLineArgs": "-d C:\\Conferences\\2026_CLItools\\Dumps\\investigation.dmp"
+    }
+  }
+}

@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Tool packaging
+         NOTE: When running dotnet pack, ensure no stale self-contained publish
+         output exists under bin\Release\net10.0\publish\ — dotnet pack scans that
+         folder and would bundle the entire runtime (~77 MB) into the nupkg.
+         The FolderProfile.pubxml was relocated to bin\publish-selfcontained\ to avoid this. -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>guidgen</ToolCommandName>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+
+    <!-- Runtime compatibility -->
+    <RollForward>Major</RollForward>
+  </PropertyGroup>
+
+  <!-- Exclude PDB from NuGet package to reduce size (~27 KB saved) -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+  <!-- NuGet metadata (shown in NuGet.org / dotnet tool search) -->
+  <PropertyGroup>
+    <PackageId>dotnet-guidgen</PackageId>
+    <Title>GuidGen — GUID Generator CLI Tool</Title>
+    <Version>1.0.0</Version>
+    <Authors>Christophe Nasarre</Authors>
+    <Owners>chrisnas</Owners>
+    <Description>Generate GUIDs in various formats from the command line</Description>
+    <Copyright>Copyright Christophe Nasarre 2026-$([System.DateTime]::UtcNow.ToString(yyyy))</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/chrisnas/dotnet-guidgen</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/chrisnas/dotnet-guidgen</RepositoryUrl>
+    <PackageTags>guid;uuid;cli;tool</PackageTags>
+    <PackageReleaseNotes>Initial release — supports N, D, B, P, X formats with uppercase and batch options.</PackageReleaseNotes>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <!-- ConsoleAppFramework was removed to eliminate the only external dependency
+       and reduce package size. The CLI (3 options, 1 command) is now hand-rolled
+       in Program.cs. -->
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

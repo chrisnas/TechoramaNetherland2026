@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Tool packaging (same as Section 2) -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>guidgen</ToolCommandName>
+    <PackageOutputPath>./nupkg</PackageOutputPath>
+    <!-- GeneratePackageOnBuild is NOT supported with Native AOT — use dotnet pack explicitly -->
+
+    <!-- Native AOT platform-specific packaging -->
+    <RuntimeIdentifiers>linux-x64;linux-arm64;win-x64;win-arm64</RuntimeIdentifiers>
+    <PublishSelfContained>true</PublishSelfContained>
+    <PublishTrimmed>true</PublishTrimmed>
+    <PublishAot>true</PublishAot>
+    <StripSymbols>true</StripSymbols>
+
+    <!-- AOT size optimizations (can shrink native binary from ~1.8 MB to ~1.0-1.3 MB) -->
+    <OptimizationPreference>Size</OptimizationPreference>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <IlcGenerateStackTraceData>false</IlcGenerateStackTraceData>
+    <StackTraceSupport>false</StackTraceSupport>
+    <UseSystemResourceKeys>true</UseSystemResourceKeys>
+  </PropertyGroup>
+
+  <!-- Exclude PDB from NuGet package to reduce size (~9.8 MB saved per RID) -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+
+  <!-- NuGet metadata (same as Section 2, bumped version) -->
+  <PropertyGroup>
+    <PackageId>dotnet-guidgen</PackageId>
+    <Title>GuidGen — GUID Generator CLI Tool</Title>
+    <Version>2.0.0</Version>
+    <Authors>Christophe Nasarre</Authors>
+    <Owners>chrisnas</Owners>
+    <Description>Generate GUIDs in various formats from the command line</Description>
+    <Copyright>Copyright Christophe Nasarre 2026-$([System.DateTime]::UtcNow.ToString(yyyy))</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/chrisnas/dotnet-guidgen</PackageProjectUrl>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/chrisnas/dotnet-guidgen</RepositoryUrl>
+    <PackageTags>guid;uuid;cli;tool</PackageTags>
+    <PackageReleaseNotes>v2.0.0 — Native AOT platform-specific packaging.</PackageReleaseNotes>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <!-- ConsoleAppFramework was removed to eliminate the only external dependency
+       and reduce native binary size (less BCL surface area for the AOT trimmer). -->
+  <ItemGroup>
+    <Compile Include="..\GuidGen\Program.cs" Link="Program.cs" />
+    <None Include="..\GuidGen\README.md" Link="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+</Project>

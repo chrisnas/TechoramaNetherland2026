@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="ClrMDExplorer/ClrMDExplorer.csproj" />
+  <Project Path="DeadlockApp/DeadlockApp.csproj" />
+  <Project Path="GuidGen.Aot/GuidGen.Aot.csproj" />
+  <Project Path="GuidGen/GuidGen.csproj" />
+  <Project Path="HelloBuiltinMetrics/HelloBuiltinMetrics.csproj" Id="7b25611a-d72b-41b0-aab0-416792ade9ce" />
+  <Project Path="LeakyApp/LeakyApp.csproj" />
+  <Project Path="lp/lp.csproj" />
+</Solution>
